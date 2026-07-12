@@ -38,7 +38,9 @@ const modules = [
 
   <!-- Hero -->
   <section class="relative min-h-[calc(100dvh-61px)] overflow-hidden border-b border-line">
-    <HeroGlobe client:load />
+    <div id="hero-globe-wrap" class="absolute inset-0">
+      <HeroGlobe client:load />
+    </div>
     <!-- readability scrim behind the headline -->
     <div
       class="pointer-events-none absolute inset-0 hidden lg:block"
@@ -55,19 +57,26 @@ const modules = [
       <div class="max-w-[52ch]">
         <p class="t-caps mb-6" data-reveal>Maritime Risk Observatory</p>
         <h1 id="hero-title" class="t-display max-w-[20ch] text-[clamp(2.3rem,4.6vw,4.1rem)]">
-          The world's sea lanes, watched through the dark.
+          The world's sea lanes, watched through <em>the dark.</em>
         </h1>
         <p class="mt-6 max-w-[42ch] text-lg leading-relaxed text-ink-2" data-reveal>
           Maritime incidents, chokepoint transits and AIS integrity, read from
           open sources.
         </p>
-        <div class="mt-8 flex flex-wrap gap-4" data-reveal>
+        <div class="mt-8 flex flex-wrap items-center gap-5" data-reveal>
           <Button href="/brief">Read the weekly brief</Button>
-          <Button href="/incidents" variant="secondary">Explore the incident map</Button>
+          <Button href="/incidents" variant="ghost">Explore the incident map <Icon name="arrow" size={16} /></Button>
         </div>
       </div>
     </div>
 
+    <p
+      id="globe-readout"
+      class="t-meta absolute bottom-4 left-6 hidden md:block"
+      aria-hidden="true"
+    >
+      CAM 048.0°E 14.0°N · VIIRS NIGHT
+    </p>
     <p class="t-meta absolute bottom-4 right-6">Night imagery: NASA VIIRS Black Marble</p>
   </section>
 
@@ -128,8 +137,11 @@ const modules = [
                 <span class={`t-caps ${m.status === "Live" ? "!text-accent-text" : ""}`}>{m.status}</span>
               </span>
               <span class="relative">
-                <span class="t-serif block text-xl">{m.title}</span>
+                <span class="t-serif block text-xl transition-colors duration-200 group-hover:text-accent-text">{m.title}</span>
                 <span class="mt-2 block max-w-[36ch] text-sm leading-relaxed text-ink-2">{m.desc}</span>
+              </span>
+              <span class="absolute bottom-6 right-6 translate-x-1 text-ink-3 opacity-0 transition-[opacity,transform] duration-200 [transition-timing-function:var(--ease-out)] group-hover:translate-x-0 group-hover:opacity-100 group-hover:text-accent-text">
+                <Icon name="arrow" size={18} />
               </span>
             </a>
           ))
@@ -161,6 +173,19 @@ const modules = [
             delay: 0.1,
           });
         }
+      });
+
+      // the globe recedes slightly as you leave the hero
+      gsap.to("#hero-globe-wrap", {
+        yPercent: 10,
+        opacity: 0.55,
+        ease: "none",
+        scrollTrigger: {
+          trigger: "#hero-globe-wrap",
+          start: "top top",
+          end: "bottom top",
+          scrub: true,
+        },
       });
 
       for (const el of gsap.utils.toArray<HTMLElement>("[data-reveal]")) {

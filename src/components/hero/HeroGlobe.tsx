@@ -10,13 +10,18 @@ import "maplibre-gl/dist/maplibre-gl.css";
 const TILES =
   "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_Black_Marble/default/2016-01-01/GoogleMapsCompatible_Level8/{z}/{y}/{x}.png";
 
-const CHOKEPOINTS: Array<[number, number]> = [
-  [43.4, 12.6], // Bab el-Mandeb
-  [32.5, 30], // Suez
-  [18.4, -34.9], // Cape of Good Hope
-  [56.5, 26.5], // Hormuz
-  [100.5, 3], // Malacca
-  [-5.6, 35.9], // Gibraltar
+const CHOKEPOINTS: Array<{ name: string; lnglat: [number, number] }> = [
+  { name: "Bab el-Mandeb", lnglat: [43.4, 12.6] },
+  { name: "Suez", lnglat: [32.5, 30] },
+  { name: "Good Hope", lnglat: [18.4, -34.9] },
+  { name: "Hormuz", lnglat: [56.5, 26.5] },
+  { name: "Malacca", lnglat: [100.5, 3] },
+  { name: "Gibraltar", lnglat: [-5.6, 35.9] },
+  { name: "Panama", lnglat: [-79.7, 9.1] },
+  { name: "Bosphorus", lnglat: [29.1, 41.1] },
+  { name: "Danish Straits", lnglat: [12.6, 55.9] },
+  { name: "Dover", lnglat: [1.5, 51.05] },
+  { name: "Taiwan Strait", lnglat: [119.5, 24.5] },
 ];
 
 const START_LNG = 48;
@@ -87,12 +92,18 @@ export default function HeroGlobe() {
     });
 
     map.on("load", () => {
-      for (const [lng, lat] of CHOKEPOINTS) {
+      for (const { name, lnglat } of CHOKEPOINTS) {
         const el = document.createElement("span");
         el.className = "map-marker";
         el.style.width = "9px";
         el.style.height = "9px";
-        new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
+        const label = document.createElement("span");
+        label.className = "map-marker-label";
+        label.textContent = name;
+        el.appendChild(label);
+        new maplibregl.Marker({ element: el, opacityWhenCovered: "0" })
+          .setLngLat(lnglat)
+          .addTo(map);
       }
     });
 
@@ -106,10 +117,18 @@ export default function HeroGlobe() {
     let raf = 0;
     let running = false;
     let t0 = 0;
+    let lastReadout = 0;
+    const readout = document.getElementById("globe-readout");
+    const fmtLng = (l: number) =>
+      `${Math.abs(l).toFixed(1).padStart(5, "0")}°${l >= 0 ? "E" : "W"}`;
     const spin = (now: number) => {
       if (!t0) t0 = now;
       const lng = ((START_LNG - ((now - t0) / 1000) * DEG_PER_SEC) % 360 + 540) % 360 - 180;
       map.jumpTo({ center: [lng, LAT] });
+      if (readout && now - lastReadout > 180) {
+        lastReadout = now;
+        readout.textContent = `CAM ${fmtLng(lng)} ${LAT.toFixed(1).padStart(4, "0")}°N · ROT 0.55°/s · VIIRS NIGHT`;
+      }
       raf = requestAnimationFrame(spin);
     };
     const start = () => {

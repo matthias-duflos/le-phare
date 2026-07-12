@@ -270,6 +270,25 @@ body {
   background: rgba(192, 57, 43, 0.35);
 }
 
+.map-marker-label {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #a9b8c6;
+  text-shadow: 0 0 6px rgba(4, 10, 16, 0.9), 0 0 2px rgba(4, 10, 16, 0.9);
+}
+@media (max-width: 767px) {
+  .map-marker-label {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .map-marker::after {
     content: "";
