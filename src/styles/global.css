@@ -366,6 +366,46 @@ body {
 
 /* Scroll reveal initial state is applied by GSAP (no-JS stays visible) */
 
+/* Drawn underline on hover (editorial links) -------------------------- */
+
+.link-draw {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 2px;
+  background-repeat: no-repeat;
+  background-position: 0 96%;
+  transition: background-size var(--dur-3) var(--ease-out);
+}
+.group:hover .link-draw,
+a:hover > .link-draw {
+  background-size: 100% 2px;
+}
+
+/* Footer wordmark: the beam sweeps through once when revealed --------- */
+
+.wordmark {
+  background: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--ink) 9%, transparent) 44%,
+    color-mix(in srgb, var(--accent) 80%, transparent) 50%,
+    color-mix(in srgb, var(--ink) 9%, transparent) 56%
+  );
+  background-size: 320% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .wordmark.sweep {
+    animation: wordmark-sweep 2.4s var(--ease-out) forwards;
+  }
+  @keyframes wordmark-sweep {
+    to {
+      background-position: 0% 0;
+    }
+  }
+}
+
 /* Editorial prose (/brief bodies) ------------------------------------ */
 
 .prose-brief {

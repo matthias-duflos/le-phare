@@ -1,0 +1,32 @@
+---
+// Tiny inline trend line, viz-themed. Static sample data until the pipeline.
+interface Props {
+  points: number[];
+  width?: number;
+  height?: number;
+  stroke?: string;
+  class?: string;
+}
+const { points, width = 110, height = 30, stroke = "var(--viz-hero)", class: className = "" } = Astro.props;
+const min = Math.min(...points);
+const max = Math.max(...points);
+const span = max - min || 1;
+const coords = points.map((p, i) => [
+  (i / (points.length - 1)) * (width - 6) + 3,
+  height - 4 - ((p - min) / span) * (height - 8),
+]);
+const d = "M" + coords.map((c) => c.map((n) => n.toFixed(1)).join(" ")).join(" L");
+const last = coords[coords.length - 1];
+---
+
+<svg
+  width={width}
+  height={height}
+  viewBox={`0 0 ${width} ${height}`}
+  fill="none"
+  aria-hidden="true"
+  class={className}
+>
+  <path d={d} stroke={stroke} stroke-width="1.5" stroke-linecap="square"></path>
+  <circle cx={last[0]} cy={last[1]} r="2.2" fill={stroke}></circle>
+</svg>

@@ -10,11 +10,24 @@ import Bathymetry from "../components/motifs/Bathymetry.astro";
 import WindRose from "../components/motifs/WindRose.astro";
 import ThreeGlobe from "../components/hero/ThreeGlobe";
 import LiveTicker from "../components/hero/LiveTicker.astro";
+import Sparkline from "../components/ui/Sparkline.astro";
+import Tag from "../components/ui/Tag.astro";
 
 const briefs = (await getCollection("briefs")).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
 );
 const latest = briefs[0];
+const readMinutes = latest ? Math.max(1, Math.ceil((latest.body ?? "").split(/\s+/).length / 200)) : 0;
+
+// sample weekly series per chokepoint (until the pipeline ships)
+const chokeTrends = [
+  { name: "Bab el-Mandeb", pts: [70, 68, 64, 55, 41, 33, 28], value: 28, delta: -3 },
+  { name: "Suez", pts: [78, 72, 66, 58, 49, 44, 41], value: 41, delta: -2 },
+  { name: "Good Hope", pts: [38, 45, 52, 61, 66, 71, 74], value: 74, delta: +5 },
+  { name: "Hormuz", pts: [86, 87, 85, 88, 90, 87, 88], value: 88, delta: +1 },
+  { name: "Malacca", pts: [208, 214, 210, 209, 213, 212, 212], value: 212, delta: 0 },
+  { name: "Gibraltar", pts: [292, 296, 301, 298, 295, 297, 301], value: 301, delta: +4 },
+];
 
 const dateFmt = new Intl.DateTimeFormat("en-GB", {
   day: "numeric",
@@ -102,24 +115,61 @@ const modules = [
     </div>
   </section>
 
-  <!-- Latest brief -->
+  <!-- Chokepoints, at a glance -->
+  <section class="border-b border-line">
+    <div class="mx-auto max-w-[1320px] px-6 py-12">
+      <div class="mb-8 flex flex-wrap items-baseline justify-between gap-3" data-reveal>
+        <h2 class="t-serif text-2xl">The week on the water</h2>
+        <p class="t-meta">weekly transits · W28 · sample data</p>
+      </div>
+      <div class="grid grid-cols-2 gap-x-8 gap-y-8 md:grid-cols-3 lg:grid-cols-6" data-reveal-stagger>
+        {
+          chokeTrends.map((c) => (
+            <a href="/straits" class="group border-t border-line-2 pt-3 transition-colors duration-200">
+              <p class="text-sm text-ink-2 transition-colors duration-200 group-hover:text-accent-text">{c.name}</p>
+              <Sparkline points={c.pts} width={130} height={34} class="mt-2" />
+              <p class="t-meta mt-2 t-num">
+                {c.value}
+                <span class={c.delta > 0 ? "!text-[color:var(--viz-2)]" : c.delta < 0 ? "!text-risk-text" : ""}>
+                  {" "}{c.delta > 0 ? `+${c.delta}` : c.delta}
+                </span>
+              </p>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Latest brief: the editorial moment -->
   {
     latest && (
-      <section class="border-b border-line">
-        <div class="mx-auto grid max-w-[1320px] gap-10 px-6 py-20 md:grid-cols-12">
-          <div class="md:col-span-4" data-reveal>
-            <h2 class="t-serif text-3xl">This week's brief</h2>
-            <p class="t-meta mt-3">
-              No. {latest.data.issue} · {dateFmt.format(latest.data.date)}
+      <section class="relative overflow-hidden border-b border-line">
+        <Bathymetry class="absolute inset-0 h-full w-full" opacity={0.04} />
+        <div class="relative mx-auto grid max-w-[1320px] gap-x-10 gap-y-8 px-6 py-24 md:grid-cols-12">
+          <div class="md:col-span-3" data-reveal>
+            <p class="t-caps">This week's brief</p>
+            <p class="t-display mt-3 text-[clamp(5rem,9vw,8rem)] leading-none" style="opacity:0.12">
+              {String(latest.data.issue).padStart(2, "0")}
+            </p>
+            <p class="t-meta mt-4">
+              {dateFmt.format(latest.data.date)}
+              <br />
+              {readMinutes} min read · RSS
             </p>
           </div>
-          <a href={`/brief/${latest.id}`} class="group block md:col-span-8" data-reveal>
-            <h3 class="t-serif text-[clamp(1.8rem,3.2vw,2.6rem)] transition-colors duration-200 group-hover:text-accent-text">
-              {latest.data.title}
+          <a href={`/brief/${latest.id}`} class="group block md:col-span-9" data-reveal>
+            <h3 class="t-serif max-w-[22ch] text-[clamp(2rem,3.8vw,3.3rem)]">
+              <span class="link-draw">{latest.data.title}</span>
             </h3>
-            <p class="t-editorial mt-4 max-w-[58ch] !text-[color:var(--ink-2)]">{latest.data.dek}</p>
-            <span class="mt-6 inline-flex items-center gap-2 text-sm text-ink-2 transition-colors duration-200 group-hover:text-accent-text">
-              Read issue no. {latest.data.issue} <Icon name="arrow" size={16} />
+            <p class="t-editorial mt-5 max-w-[56ch] !text-[color:var(--ink-2)]">{latest.data.dek}</p>
+            <span class="mt-8 flex flex-wrap items-center gap-2">
+              {latest.data.tags.map((t) => (
+                <Tag label={t.replace(/-/g, " ")} />
+              ))}
+              <span class="ml-2 inline-flex items-center gap-2 text-sm text-ink-2 transition-colors duration-200 group-hover:text-accent-text">
+                Read issue no. {latest.data.issue} <Icon name="arrow" size={16} />
+              </span>
             </span>
           </a>
         </div>
@@ -151,6 +201,45 @@ const modules = [
                 <Icon name={m.icon} size={24} class="text-ink-2 transition-colors duration-200 group-hover:text-accent-text" />
                 <span class="t-caps">{m.status}</span>
               </span>
+
+              {m.title === "Incident database" && (
+                <span class="relative my-5 block">
+                  <Sparkline points={[9, 12, 11, 16, 19, 17, 23, 27, 25, 31, 34, 41]} width={300} height={44} />
+                  <span class="t-meta mt-1 block">incidents per month · trailing year · sample</span>
+                </span>
+              )}
+              {m.title === "Strait monitor" && (
+                <span class="relative my-5 grid gap-2">
+                  {[
+                    { n: "Bab el-Mandeb", p: [70, 64, 55, 41, 33, 28] },
+                    { n: "Suez", p: [78, 66, 58, 49, 44, 41] },
+                    { n: "Good Hope", p: [38, 52, 61, 66, 71, 74] },
+                  ].map((s) => (
+                    <span class="flex items-center gap-3">
+                      <Sparkline points={s.p} width={90} height={20} stroke="var(--viz-context)" />
+                      <span class="t-meta">{s.n}</span>
+                    </span>
+                  ))}
+                </span>
+              )}
+              {m.title === "AIS integrity watch" && (
+                <span class="relative my-5 flex items-center gap-1.5">
+                  {[0.14, 0.22, 0.38, 0.30, 0.55, 0.75, 1].map((o) => (
+                    <span class="inline-block size-[14px]" style={`background:var(--accent);opacity:${o * 0.85}`} />
+                  ))}
+                  <span class="t-meta ml-2">jamming intensity · 7 weeks · sample</span>
+                </span>
+              )}
+              {m.title === "Maritime risk lexicon" && (
+                <span
+                  aria-hidden="true"
+                  class="t-serif pointer-events-none absolute -bottom-3 right-4 text-[4.2rem] italic leading-none"
+                  style="opacity:0.09"
+                >
+                  demurrage
+                </span>
+              )}
+
               <span class="relative">
                 <span class={`t-serif block transition-colors duration-200 group-hover:text-accent-text ${i < 2 ? "text-2xl" : "text-xl"}`}>{m.title}</span>
                 <span class="mt-2 block max-w-[40ch] text-sm leading-relaxed text-ink-2">{m.desc}</span>
