@@ -98,8 +98,24 @@ const rerouting = weekly["good-hope"].weekly.map((e, i) => {
   return { w: e.w, idx: suez && suez.t ? Math.round((e.t / suez.t) * 100) / 100 : null };
 });
 
+// ---- data-driven alerts: latest week vs 2024-2025 baseline ----
+for (const [slug, { series }] of Object.entries(daily)) {
+  const base = series.filter(([d]) => d < "2026-01-01").map(([, t]) => t);
+  const baselineWeekly = base.length ? Math.round((base.reduce((a, b) => a + b, 0) / base.length) * 7) : null;
+  const w = weekly[slug];
+  w.baseline = baselineWeekly;
+  const pct = baselineWeekly && w.last != null ? Math.round((w.last / baselineWeekly) * 100) : null;
+  w.pct = pct;
+  const prev3 = w.weekly.slice(-4, -1).map((e) => e.t);
+  const rising = prev3.length === 3 && w.last > prev3[2] && prev3[2] > prev3[0];
+  w.trend = rising ? "recovering" : null;
+  w.status = pct == null ? "normal" : pct < 50 ? "critical" : pct < 80 ? "watch" : pct > 160 ? "elevated" : "normal";
+}
+
 writeFileSync(
   new URL("../src/data/transits-weekly.json", import.meta.url),
   JSON.stringify({ updated: latestDate, chokepoints: weekly, rerouting }),
 );
+for (const [slug, w] of Object.entries(weekly))
+  if (w.status !== "normal") console.log(`ALERT ${w.status.toUpperCase()}: ${w.name} at ${w.pct}% of 2024-25 baseline (${w.last}/wk vs ~${w.baseline})${w.trend ? " · " + w.trend : ""}`);
 console.log(`portwatch: ${rows.length} daily rows to ${latestDate}; weekly last = ${weekly["bab-el-mandeb"].week}, bab=${weekly["bab-el-mandeb"].last}, rerouting=${rerouting.at(-1)?.idx}`);

@@ -55,7 +55,14 @@ const rerouting = weekly.rerouting.at(-1);
         {
           chokepoints.map((c) => (
             <div id={c.slug} class="scroll-mt-28 border-t border-line-2 pt-4 target:bg-accent-wash">
-              <p class="t-serif text-xl">{c.name}</p>
+              <p class="flex items-baseline justify-between gap-3">
+                <span class="t-serif text-xl">{c.name}</span>
+                {(weekly.chokepoints as any)[c.slug].status !== "normal" && (
+                  <span class={`t-caps ${(weekly.chokepoints as any)[c.slug].status === "critical" ? "!text-risk-text" : "!text-accent-text"}`}>
+                    {(weekly.chokepoints as any)[c.slug].status} · {(weekly.chokepoints as any)[c.slug].pct}% of baseline
+                  </span>
+                )}
+              </p>
               <Sparkline points={c.pts} width={200} height={44} class="mt-3" />
               <p class="t-meta t-num mt-2">
                 {c.value} in {c.week?.slice(5)}

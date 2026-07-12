@@ -1,6 +1,7 @@
 ---
 import Logo from "./Logo.astro";
 import ThemeToggle from "./ThemeToggle.astro";
+import AlertBanner from "./AlertBanner.astro";
 
 const nav = [
   { href: "/incidents", label: "Incidents" },
@@ -45,4 +46,5 @@ const current = Astro.url.pathname;
     </nav>
     <span class="hidden sm:block"><ThemeToggle /></span>
   </div>
+  <AlertBanner />
 </header>

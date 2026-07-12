@@ -1,0 +1,35 @@
+---
+// Data-driven alert strip: computed from IMF PortWatch weekly aggregates
+// against each chokepoint's 2024-2025 baseline. Nothing here is hand-set.
+import weekly from "../data/transits-weekly.json";
+
+const RANK = { critical: 0, watch: 1, elevated: 2 } as const;
+const alerts = Object.entries(weekly.chokepoints as Record<string, any>)
+  .map(([slug, c]) => ({ slug, ...c }))
+  .filter((c) => c.status && c.status !== "normal")
+  .sort((a, b) => (RANK as any)[a.status] - (RANK as any)[b.status]);
+---
+
+{
+  alerts.length > 0 && (
+    <div class="border-b border-[color:var(--risk)] bg-risk-wash">
+      <div class="mx-auto flex max-w-[1320px] flex-wrap items-baseline gap-x-4 gap-y-1 px-6 py-2.5">
+        {alerts.map((a) => (
+          <a href={`/straits#${a.slug}`} class="group flex flex-wrap items-baseline gap-x-3 text-sm">
+            <span class={`t-caps ${a.status === "critical" ? "!text-risk-text" : "!text-accent-text"}`}>
+              <span class="mr-1.5 inline-block size-[7px] align-middle" style={`background:${a.status === "critical" ? "var(--risk)" : "var(--accent)"}`} />
+              {a.status}
+            </span>
+            <span class="text-ink transition-colors duration-150 group-hover:text-accent-text">
+              {a.name} at {a.pct}% of its 2024-25 baseline
+            </span>
+            <span class="t-meta">
+              {a.last}/wk vs ~{a.baseline}
+              {a.trend ? ` · ${a.trend}` : ""} · {a.week?.slice(5)} · PortWatch
+            </span>
+          </a>
+        ))}
+      </div>
+    </div>
+  )
+}
