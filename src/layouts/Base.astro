@@ -29,6 +29,19 @@ const { title, description } = Astro.props;
     </script>
   </head>
   <body class="grain bg-bg-0 text-ink font-sans">
+    <script>
+      // Lenis smooth scroll, site-wide. Disabled under reduced motion.
+      import Lenis from "lenis";
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        const lenis = new Lenis({ duration: 1.05, smoothWheel: true });
+        (window as any).__lenis = lenis;
+        const raf = (t: number) => {
+          lenis.raf(t);
+          requestAnimationFrame(raf);
+        };
+        requestAnimationFrame(raf);
+      }
+    </script>
     <a
       href="#main"
       class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[70] focus:bg-accent focus:text-accent-ink focus:px-3 focus:py-2 focus:text-sm"
