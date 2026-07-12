@@ -1,0 +1,19 @@
+---
+// Taxonomy tag for incident types / zones. The colored square is semantic:
+// it matches the series color of the same category in every chart.
+interface Props {
+  label: string;
+  viz?: 1 | 2 | 3 | 4 | 5 | 6;
+  risk?: boolean;
+  class?: string;
+}
+const { label, viz, risk = false, class: className = "" } = Astro.props;
+const swatch = risk ? "var(--risk)" : viz ? `var(--viz-${viz})` : undefined;
+---
+
+<span
+  class={`inline-flex items-center gap-1.5 border border-line-2 rounded-r1 px-2 py-1 t-caps !text-ink-2 ${className}`}
+>
+  {swatch && <span class="inline-block size-[7px]" style={`background:${swatch}`}></span>}
+  {label}
+</span>

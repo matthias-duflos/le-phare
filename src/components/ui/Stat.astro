@@ -1,0 +1,56 @@
+---
+// Live stat: counts up when it enters the viewport (static under reduced motion).
+interface Props {
+  value: number;
+  label: string;
+  detail?: string;
+  accent?: boolean;
+  suffix?: string;
+}
+const { value, label, detail, accent = false, suffix = "" } = Astro.props;
+---
+
+<div class="stat border-t border-line-2 pt-3">
+  <p
+    class={`t-num font-sans text-[2.6rem] leading-none font-light tracking-tight ${accent ? "text-accent-text" : "text-ink"}`}
+  >
+    <span class="stat-value" data-target={value}>0</span>{suffix}
+  </p>
+  <p class="t-caps mt-2 !text-ink-2">{label}</p>
+  {detail && <p class="t-meta mt-1">{detail}</p>}
+</div>
+
+<script>
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const format = (n: number) => n.toLocaleString("en-US");
+
+  const animate = (el: HTMLElement) => {
+    const target = Number(el.dataset.target ?? 0);
+    if (reduce) {
+      el.textContent = format(target);
+      return;
+    }
+    const t0 = performance.now();
+    const dur = 900;
+    const tick = (t: number) => {
+      const p = Math.min((t - t0) / dur, 1);
+      const eased = 1 - Math.pow(1 - p, 4);
+      el.textContent = format(Math.round(target * eased));
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  };
+
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) {
+          animate(e.target as HTMLElement);
+          io.unobserve(e.target);
+        }
+      }
+    },
+    { threshold: 0.6 },
+  );
+  document.querySelectorAll<HTMLElement>(".stat-value").forEach((el) => io.observe(el));
+</script>

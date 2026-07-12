@@ -1,0 +1,20 @@
+---
+// Editorial figure convention (FT-style): the title states the conclusion,
+// the subtitle gives unit and period, the source line closes in mono.
+interface Props {
+  title: string;
+  subtitle: string;
+  source: string;
+  class?: string;
+}
+const { title, subtitle, source, class: className = "" } = Astro.props;
+---
+
+<figure class={`border-t border-line-2 pt-4 ${className}`}>
+  <figcaption class="mb-4">
+    <p class="t-serif text-[1.35rem] text-ink">{title}</p>
+    <p class="text-sm text-ink-3 mt-1">{subtitle}</p>
+  </figcaption>
+  <slot />
+  <p class="t-meta mt-3">{source} · Graphic: Le Phare</p>
+</figure>

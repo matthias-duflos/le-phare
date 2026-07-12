@@ -1,0 +1,287 @@
+@import "tailwindcss";
+
+/* ============================================================
+   LE PHARE — Design tokens
+   Dark ("abyss") is the default editorial surface.
+   Light mode is opt-in via [data-theme="light"].
+   ============================================================ */
+
+:root {
+  /* Surfaces */
+  --bg-0: #0A1622; /* page, the paper */
+  --bg-1: #0E2233; /* raised panel */
+  --bg-2: #14293D; /* hover / active surface */
+
+  /* Ink */
+  --ink: #E8EDF2;   /* primary text        15.5:1 on bg-0 */
+  --ink-2: #A9B8C6; /* secondary text       9.0:1 */
+  --ink-3: #71869B; /* meta, captions       4.9:1 */
+
+  /* Hairlines */
+  --line: rgba(232, 237, 242, 0.08);
+  --line-2: rgba(232, 237, 242, 0.16);
+
+  /* The beam — one accent, used sparingly */
+  --accent: #F2B950;          /* fills, hero series, CTA   */
+  --accent-text: #F2B950;     /* accent as text (10.3:1)   */
+  --accent-ink: #0A1622;      /* text sitting on accent    */
+  --accent-wash: rgba(242, 185, 80, 0.12);
+
+  /* Incidents only */
+  --risk: #C0392B;            /* fills, markers            */
+  --risk-text: #E06B54;       /* risk as text (5.6:1)      */
+  --risk-wash: rgba(192, 57, 43, 0.14);
+
+  --focus-ring: #F2B950;
+
+  /* Dataviz — categorical, CVD-validated order (worst adjacent dE 31.2) */
+  --viz-1: #C98500; /* deep amber  */
+  --viz-2: #2FA189; /* teal        */
+  --viz-3: #8B7FE8; /* periwinkle  */
+  --viz-4: #C46383; /* rose        */
+  --viz-5: #4E8FD0; /* steel       */
+  --viz-6: #C75A38; /* copper      */
+  --viz-hero: #F2B950;          /* single hero series        */
+  --viz-context: #3E5468;       /* context series, de-emphasised */
+  --viz-grid: rgba(232, 237, 242, 0.07);
+  --viz-axis: #71869B;
+
+  /* Type */
+  --font-serif: "Newsreader Variable", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter Variable", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", monospace;
+
+  /* Motion */
+  --dur-1: 150ms;
+  --dur-2: 200ms;
+  --dur-3: 250ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Shape — quasi-sharp: an ops room is not round */
+  --r-1: 2px;
+  --r-2: 4px;
+
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --bg-0: #F5F7F9;
+  --bg-1: #FFFFFF;
+  --bg-2: #E9EEF2;
+
+  --ink: #16232E;   /* 14.9:1 */
+  --ink-2: #45586A; /*  6.8:1 */
+  --ink-3: #5D7286; /*  4.7:1 */
+
+  --line: rgba(22, 35, 46, 0.10);
+  --line-2: rgba(22, 35, 46, 0.20);
+
+  --accent: #F2B950;
+  --accent-text: #8A6100;  /* 5.2:1 as text on light */
+  --accent-ink: #16232E;
+  --accent-wash: rgba(242, 185, 80, 0.22);
+
+  --risk: #C0392B;
+  --risk-text: #A93226;    /* 6.2:1 */
+  --risk-wash: rgba(192, 57, 43, 0.10);
+
+  --focus-ring: #8A6100;
+
+  --viz-1: #9A6A00;
+  --viz-2: #0E8467;
+  --viz-3: #6B5FD6;
+  --viz-4: #A84A68;
+  --viz-5: #2E6FB0;
+  --viz-6: #A8441F;
+  --viz-hero: #9A6A00;
+  --viz-context: #B7C3CD;
+  --viz-grid: rgba(22, 35, 46, 0.08);
+  --viz-axis: #5D7286;
+
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-bg-0: var(--bg-0);
+  --color-bg-1: var(--bg-1);
+  --color-bg-2: var(--bg-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-accent: var(--accent);
+  --color-accent-text: var(--accent-text);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-wash: var(--accent-wash);
+  --color-risk: var(--risk);
+  --color-risk-text: var(--risk-text);
+  --color-risk-wash: var(--risk-wash);
+  --font-serif: var(--font-serif);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --radius-r1: var(--r-1);
+  --radius-r2: var(--r-2);
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+
+html {
+  background: var(--bg-0);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  min-height: 100dvh;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--r-1);
+}
+
+/* Typographic roles ------------------------------------------------ */
+
+.t-display {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-variation-settings: "opsz" 72;
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+.t-serif {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 32;
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.008em;
+  text-wrap: balance;
+}
+
+.t-editorial {
+  /* long-form body, /brief pages */
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 16;
+  font-size: 1.125rem;
+  line-height: 1.65;
+  color: var(--ink);
+}
+
+.t-caps {
+  /* taxonomy: incident types, zones, section labels */
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-3);
+}
+
+.t-meta {
+  /* coordinates, timestamps, sources — the ship's log register */
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.t-num {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Prose links ------------------------------------------------------- */
+
+.link {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--line-2);
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+.link:hover {
+  color: var(--accent-text);
+  text-decoration-color: var(--accent-text);
+}
+
+/* Grain — fixed, non-scrolling, never above content ------------------ */
+
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.028;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Lighthouse beam sweep — plays once on load ------------------------ */
+
+@media (prefers-reduced-motion: no-preference) {
+  .beam-sweep {
+    animation: beam-sweep 1.6s var(--ease-out) 0.2s both;
+    transform-origin: 12px 9px;
+  }
+  @keyframes beam-sweep {
+    0%   { transform: rotate(-38deg); opacity: 0; }
+    18%  { opacity: 1; }
+    100% { transform: rotate(0deg); opacity: 1; }
+  }
+
+  .fade-up {
+    animation: fade-up 0.6s var(--ease-out) both;
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* Tables ------------------------------------------------------------ */
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.data-table th {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-3);
+  text-align: left;
+  padding: 0.5rem 1rem 0.5rem 0;
+  border-bottom: 1px solid var(--line-2);
+}
+.data-table td {
+  padding: 0.625rem 1rem 0.625rem 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.data-table td:first-child { color: var(--ink); }
+.data-table tbody tr {
+  transition: background var(--dur-1) var(--ease-out);
+}
+.data-table tbody tr:hover { background: var(--bg-1); }
+.data-table .num { text-align: right; }

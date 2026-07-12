@@ -1,0 +1,45 @@
+---
+// Compass rose watermark — section filigree, never above content.
+interface Props {
+  size?: number;
+  class?: string;
+  opacity?: number;
+}
+const { size = 220, class: className = "", opacity = 0.06 } = Astro.props;
+---
+
+<svg
+  width={size}
+  height={size}
+  viewBox="0 0 200 200"
+  fill="none"
+  stroke="var(--ink)"
+  aria-hidden="true"
+  class={`pointer-events-none select-none ${className}`}
+  style={`opacity:${opacity}`}
+>
+  <circle cx="100" cy="100" r="96" stroke-width="1" />
+  <circle cx="100" cy="100" r="78" stroke-width="0.75" stroke-dasharray="2 5" />
+  <circle cx="100" cy="100" r="6" stroke-width="1" />
+  <!-- cardinal points -->
+  <path d="M100 10 L107 93 L100 100 L93 93 Z" fill="var(--ink)" stroke="none" />
+  <path d="M100 190 L107 107 L100 100 L93 107 Z" stroke-width="1" />
+  <path d="M10 100 L93 93 L100 100 L93 107 Z" stroke-width="1" />
+  <path d="M190 100 L107 93 L100 100 L107 107 Z" fill="var(--ink)" stroke="none" />
+  <!-- intercardinal -->
+  <path d="M158 42 L110 90 L100 100 L110 96 Z" stroke-width="0.75" />
+  <path d="M42 158 L90 110 L100 100 L90 104 Z" stroke-width="0.75" />
+  <path d="M42 42 L90 90 L100 100 L96 90 Z" stroke-width="0.75" />
+  <path d="M158 158 L110 110 L100 100 L104 110 Z" stroke-width="0.75" />
+  <!-- degree ticks -->
+  {
+    Array.from({ length: 36 }, (_, i) => {
+      const a = (i * 10 * Math.PI) / 180;
+      const r1 = 90, r2 = i % 9 === 0 ? 82 : 87;
+      const x1 = 100 + r1 * Math.sin(a), y1 = 100 - r1 * Math.cos(a);
+      const x2 = 100 + r2 * Math.sin(a), y2 = 100 - r2 * Math.cos(a);
+      return <line x1={x1} y1={y1} x2={x2} y2={y2} stroke-width="0.75" />;
+    })
+  }
+  <text x="100" y="30" text-anchor="middle" font-family="var(--font-mono)" font-size="12" fill="var(--ink)" stroke="none">N</text>
+</svg>

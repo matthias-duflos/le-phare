@@ -1,0 +1,41 @@
+---
+import "@fontsource-variable/newsreader";
+import "@fontsource-variable/newsreader/wght-italic.css";
+import "@fontsource-variable/inter";
+import "@fontsource-variable/jetbrains-mono";
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <script is:inline>
+      // Theme is dark by default; light is a stored preference.
+      if (localStorage.getItem("phare-theme") === "light") {
+        document.documentElement.dataset.theme = "light";
+      }
+    </script>
+  </head>
+  <body class="grain bg-bg-0 text-ink font-sans">
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[70] focus:bg-accent focus:text-accent-ink focus:px-3 focus:py-2 focus:text-sm"
+      >Skip to content</a
+    >
+    <main id="main">
+      <slot />
+    </main>
+  </body>
+</html>
