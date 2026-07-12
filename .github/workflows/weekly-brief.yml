@@ -19,6 +19,7 @@ jobs:
           node-version: 22
       - run: node scripts/fetch-portwatch.mjs
       - run: node scripts/fetch-navarea.mjs
+      - run: node scripts/fetch-wire.mjs
       - run: node scripts/make-brief.mjs
       - name: commit & push
         run: |

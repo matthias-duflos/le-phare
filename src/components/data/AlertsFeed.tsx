@@ -13,32 +13,56 @@ const QUERY = encodeURIComponent(
 const fmt = (s: string) =>
   `${s.slice(9, 11)}:${s.slice(11, 13)} UTC · ${s.slice(6, 8)}/${s.slice(4, 6)}`;
 
+const dedupe = (arts: Article[], max: number) => {
+  const seen = new Set<string>();
+  const out: Article[] = [];
+  for (const a of arts) {
+    const k = a.title.toLowerCase().slice(0, 55);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(a);
+    if (out.length >= max) break;
+  }
+  return out;
+};
+
 export default function AlertsFeed({ max = 10, timespan = "48h" }: { max?: number; timespan?: string }) {
   const URL_ = `https://api.gdeltproject.org/api/v2/doc/doc?query=${QUERY}&mode=artlist&maxrecords=${Math.min(max * 3, 75)}&timespan=${timespan}&format=json&sort=datedesc`;
   const [articles, setArticles] = useState<Article[] | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [snapshot, setSnapshot] = useState<string | null>(null);
 
   useEffect(() => {
+    // 15-minute session cache protects GDELT's 1-request/5s rate limit
+    const CACHE = "phare-wire";
+    try {
+      const c = JSON.parse(sessionStorage.getItem(CACHE) ?? "null");
+      if (c && Date.now() - c.at < 15 * 60000) {
+        setArticles(dedupe(c.articles, max));
+        return;
+      }
+    } catch {}
+    const useSnapshot = () =>
+      fetch("/data/wire.json")
+        .then((r) => r.json())
+        .then((d) => {
+          setArticles(dedupe(d.articles, max));
+          setSnapshot(d.fetched?.slice(0, 10) ?? "");
+        })
+        .catch(() => setArticles([]));
     fetch(URL_)
       .then((r) => r.json())
       .then((d) => {
-        const seen = new Set<string>();
-        const out: Article[] = [];
-        for (const a of d.articles ?? []) {
-          const key = a.title.toLowerCase().slice(0, 60);
-          if (seen.has(key)) continue;
-          seen.add(key);
-          out.push(a);
-          if (out.length >= max) break;
-        }
-        setArticles(out);
+        if (!d.articles) throw new Error("rate limited");
+        sessionStorage.setItem(CACHE, JSON.stringify({ at: Date.now(), articles: d.articles }));
+        setArticles(dedupe(d.articles, max));
       })
-      .catch(() => setFailed(true));
+      .catch(useSnapshot);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (failed)
-    return <p className="t-meta">live wire unreachable · the feed returns on the next visit</p>;
   if (!articles) return <p className="t-meta">reading the wire…</p>;
+  if (articles.length === 0)
+    return <p className="t-meta">wire temporarily unreachable · the weekly snapshot returns shortly</p>;
 
   return (
     <div>
@@ -55,7 +79,8 @@ export default function AlertsFeed({ max = 10, timespan = "48h" }: { max?: numbe
         ))}
       </ol>
       <p className="t-meta mt-4">
-        GDELT news mentions, last {timespan.replace("h", " h").replace("d", " days")} ·
+        GDELT news mentions, last {timespan.replace("h", " h").replace("d", " days")}
+        {snapshot ? ` · snapshot ${snapshot} (live feed rate-limited)` : " · live"} ·
         unverified, for research context only · not the incident database
       </p>
     </div>
