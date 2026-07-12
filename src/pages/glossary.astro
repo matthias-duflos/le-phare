@@ -1,9 +1,193 @@
 ---
-import Stub from "../layouts/Stub.astro";
+import Base from "../layouts/Base.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import { glossary, CATEGORIES, resolveRelated } from "../data/glossary";
+
+// group by first letter for the dictionary layout
+const letters = [...new Set(glossary.map((e) => e.term[0].toUpperCase()))];
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "DefinedTermSet",
+  name: "Maritime Risk Lexicon",
+  description: "Original definitions of shipping and marine insurance terms.",
+  hasDefinedTerm: glossary.map((e) => ({
+    "@type": "DefinedTerm",
+    "@id": `#${e.slug}`,
+    name: e.term,
+    description: e.def,
+  })),
+};
 ---
 
-<Stub
-  title="Maritime Risk Lexicon"
-  description="Around one hundred terms of shipping and marine insurance, defined precisely, searchable and linkable."
-  phase="In build · ships in Phase 2"
-/>
+<Base
+  title="Maritime Risk Lexicon · Le Phare"
+  description="One hundred terms of shipping and marine insurance, defined precisely: chartering, war risk, AIS integrity, salvage and the vocabulary of maritime security."
+>
+  <SiteHeader />
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+  <div class="mx-auto max-w-[1320px] px-6">
+    <!-- Masthead -->
+    <section class="border-b border-line py-16 md:py-20">
+      <h1 class="t-display max-w-[16ch] text-[clamp(2.4rem,5vw,4rem)]">
+        Maritime Risk Lexicon
+      </h1>
+      <p class="mt-6 max-w-[54ch] text-lg leading-relaxed text-ink-2">
+        {glossary.length} terms of shipping and marine insurance, defined in
+        plain, precise English. Every entry links to its neighbours; every
+        definition is original.
+      </p>
+    </section>
+
+    <!-- Controls -->
+    <div class="sticky top-[57px] z-40 -mx-6 border-b border-line bg-bg-0/95 px-6 py-4 backdrop-blur-sm">
+      <div class="flex flex-wrap items-center gap-3">
+        <input
+          id="lex-search"
+          type="search"
+          placeholder="Search a term…"
+          autocomplete="off"
+          class="w-full max-w-xs border border-line-2 bg-transparent px-3 py-2 text-sm text-ink placeholder:text-ink-3 rounded-r1 focus:border-[color:var(--accent)] focus:outline-none"
+        />
+        <div class="flex flex-wrap gap-2" id="lex-cats">
+          <button
+            data-cat=""
+            aria-pressed="true"
+            class="lex-cat t-caps cursor-pointer border border-line-2 rounded-r1 px-3 py-1.5 transition-colors duration-150"
+          >
+            All
+          </button>
+          {
+            CATEGORIES.map((c) => (
+              <button
+                data-cat={c}
+                aria-pressed="false"
+                class="lex-cat t-caps cursor-pointer border border-line-2 rounded-r1 px-3 py-1.5 transition-colors duration-150"
+              >
+                {c}
+              </button>
+            ))
+          }
+        </div>
+        <p id="lex-count" class="t-meta ml-auto" aria-live="polite">{glossary.length} terms</p>
+      </div>
+    </div>
+
+    <!-- Entries -->
+    <section class="py-10">
+      <p id="lex-empty" class="t-serif hidden py-16 text-center text-xl text-ink-2">
+        Nothing under that heading. Try fewer letters.
+      </p>
+      {
+        letters.map((L) => (
+          <div class="lex-letter" data-letter={L}>
+            <p class="t-display border-b border-line py-4 text-4xl" style="opacity:0.25">{L}</p>
+            <dl>
+              {glossary
+                .filter((e) => e.term[0].toUpperCase() === L)
+                .map((e) => (
+                  <div
+                    id={e.slug}
+                    class="lex-entry group grid scroll-mt-36 gap-x-10 border-b border-line py-7 md:grid-cols-12 target:bg-accent-wash"
+                    data-term={e.term.toLowerCase()}
+                    data-cat={e.cat}
+                  >
+                    <dt class="md:col-span-4">
+                      <a href={`#${e.slug}`} class="block">
+                        <span class="t-serif text-2xl transition-colors duration-150 group-hover:text-accent-text">
+                          {e.term}
+                        </span>
+                      </a>
+                      <p class="mt-1.5 flex items-center gap-3">
+                        <span class="t-caps">{e.cat}</span>
+                        {e.pron && <span class="t-meta">{e.pron}</span>}
+                      </p>
+                    </dt>
+                    <dd class="mt-3 md:col-span-8 md:mt-0">
+                      <p class="t-editorial max-w-[62ch] !text-base">{e.def}</p>
+                      {e.related.length > 0 && (
+                        <p class="mt-3 text-sm text-ink-3">
+                          See also{" "}
+                          {resolveRelated(e.related).map((r, i, arr) => (
+                            <>
+                              <a href={`#${r.slug}`} class="link">
+                                {r.term}
+                              </a>
+                              {i < arr.length - 1 ? " · " : ""}
+                            </>
+                          ))}
+                        </p>
+                      )}
+                    </dd>
+                  </div>
+                ))}
+            </dl>
+          </div>
+        ))
+      }
+    </section>
+  </div>
+
+  <SiteFooter />
+
+  <script>
+    // Instant fuzzy filter: exact-substring first, then in-order subsequence.
+    const input = document.getElementById("lex-search") as HTMLInputElement;
+    const count = document.getElementById("lex-count")!;
+    const empty = document.getElementById("lex-empty")!;
+    const entries = [...document.querySelectorAll<HTMLElement>(".lex-entry")];
+    const letters = [...document.querySelectorAll<HTMLElement>(".lex-letter")];
+    const catBtns = [...document.querySelectorAll<HTMLButtonElement>(".lex-cat")];
+    let activeCat = "";
+
+    const subseq = (needle: string, hay: string) => {
+      let i = 0;
+      for (const ch of hay) if (ch === needle[i]) i++;
+      return i === needle.length;
+    };
+
+    const apply = () => {
+      const q = input.value.trim().toLowerCase();
+      let visible = 0;
+      for (const el of entries) {
+        const term = el.dataset.term!;
+        const okCat = !activeCat || el.dataset.cat === activeCat;
+        const okText = !q || term.includes(q) || (q.length >= 3 && subseq(q, term));
+        const show = okCat && okText;
+        el.style.display = show ? "" : "none";
+        if (show) visible++;
+      }
+      for (const L of letters) {
+        const any = [...L.querySelectorAll<HTMLElement>(".lex-entry")].some(
+          (e) => e.style.display !== "none",
+        );
+        L.style.display = any ? "" : "none";
+      }
+      count.textContent = `${visible} term${visible === 1 ? "" : "s"}`;
+      empty.classList.toggle("hidden", visible > 0);
+    };
+
+    input.addEventListener("input", apply);
+    for (const btn of catBtns) {
+      btn.addEventListener("click", () => {
+        activeCat = btn.dataset.cat ?? "";
+        for (const b of catBtns) {
+          const on = b === btn;
+          b.setAttribute("aria-pressed", String(on));
+          b.classList.toggle("!border-[color:var(--accent)]", on);
+          b.classList.toggle("!text-accent-text", on);
+        }
+        apply();
+      });
+    }
+    // initial state for "All"
+    catBtns[0].classList.add("!border-[color:var(--accent)]", "!text-accent-text");
+
+    // when arriving on an anchor, make sure the target is in view
+    if (location.hash) {
+      document.getElementById(location.hash.slice(1))?.scrollIntoView({ block: "start" });
+    }
+  </script>
+</Base>

@@ -1,9 +1,48 @@
 ---
-import Stub from "../layouts/Stub.astro";
+import Base from "../layouts/Base.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import IncidentExplorer from "../components/incidents/IncidentExplorer";
+import incidents from "../data/incidents.json";
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Dataset",
+  name: "Le Phare Maritime Incident Database (sample)",
+  description:
+    "Geocoded and typed maritime security incidents aggregated from public reporting. Sample data demonstrating the format.",
+  creator: { "@type": "Organization", name: "Le Phare" },
+  license: "https://creativecommons.org/licenses/by/4.0/",
+};
 ---
 
-<Stub
-  title="Maritime Incident Database"
-  description="Geocoded, typed and sourced incidents across the monitored zones, with a clustered map, filters and monthly trends."
-  phase="In build · ships in Phase 2"
-/>
+<Base
+  title="Maritime Incident Database · Le Phare"
+  description="Geocoded and typed maritime incidents from public reporting: drone strikes, boardings, seizures, mines, hijacks and GPS jamming, mapped and charted."
+>
+  <SiteHeader />
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+  <div class="mx-auto max-w-[1320px] px-6">
+    <section class="border-b border-line py-16 md:py-20">
+      <h1 class="t-display max-w-[18ch] text-[clamp(2.4rem,5vw,4rem)]">
+        Maritime Incident Database
+      </h1>
+      <p class="mt-6 max-w-[56ch] text-lg leading-relaxed text-ink-2">
+        {incidents.length} incidents in 2026 so far, geocoded and typed from
+        public reporting. Each entry carries an original summary and links to
+        its source; we link, we never copy.
+      </p>
+      <p class="t-meta mt-4">
+        Sample data demonstrating the module · the live pipeline follows ·
+        sources: UKMTO, MICA Center, IMB PRC
+      </p>
+    </section>
+
+    <section class="py-12">
+      <IncidentExplorer client:load />
+    </section>
+  </div>
+
+  <SiteFooter />
+</Base>
