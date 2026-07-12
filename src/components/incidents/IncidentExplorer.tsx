@@ -16,14 +16,16 @@ type Incident = {
   lat: number;
   lon: number;
   summary: string;
+  vessel?: string | null;
+  hostility?: string | null;
   source: { name: string; url: string };
 };
 
-const INCIDENTS = incidentsRaw as Incident[];
+const CURATED = incidentsRaw as Incident[];
 
 export const TYPE_LABELS: Record<string, string> = {
-  "drone-strike": "Drone strike",
-  boarding: "Boarding",
+  "drone-strike": "Missile / drone strike",
+  boarding: "Boarding / robbery",
   seizure: "Seizure",
   mine: "Mine",
   hijack: "Hijack",
@@ -32,33 +34,53 @@ export const TYPE_LABELS: Record<string, string> = {
 const TYPE_ORDER = Object.keys(TYPE_LABELS);
 const typeVar = (t: string) => `var(--viz-${TYPE_ORDER.indexOf(t) + 1})`;
 
-const PERIODS = [
-  { id: "all", label: "All 2026", days: Infinity },
-  { id: "90d", label: "Last 90 days", days: 90 },
-  { id: "30d", label: "Last 30 days", days: 30 },
+const DATASETS = [
+  { id: "asam", label: "2022-2024 · NGA ASAM archive" },
+  { id: "curated", label: "2026 · curated (sample)" },
 ];
 
-const latest = INCIDENTS.reduce((a, b) => (a.date > b.date ? a : b)).date;
-const zones = [...new Set(INCIDENTS.map((i) => i.zone))].sort();
+const PERIODS = [
+  { id: "all", label: "Whole period", days: Infinity },
+  { id: "1y", label: "Last year of data", days: 365 },
+  { id: "90d", label: "Last 90 days of data", days: 90 },
+];
 
-const fmt = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" });
+const fmt = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "2-digit" });
 
 export default function IncidentExplorer() {
+  const [dataset, setDataset] = useState("asam");
+  const [asam, setAsam] = useState<Incident[] | null>(null);
   const [types, setTypes] = useState<Set<string>>(new Set(TYPE_ORDER));
   const [period, setPeriod] = useState("all");
   const [zone, setZone] = useState("");
   const [sort, setSort] = useState<{ key: "date" | "type" | "zone"; dir: 1 | -1 }>({ key: "date", dir: -1 });
 
+  // the real archive is heavy (677 events), fetched once outside the bundle
+  useEffect(() => {
+    fetch("/data/incidents-asam.json")
+      .then((r) => r.json())
+      .then(setAsam)
+      .catch(() => setAsam([]));
+  }, []);
+
+  const data = dataset === "asam" ? (asam ?? []) : CURATED;
+  const loading = dataset === "asam" && asam === null;
+  const latest = useMemo(
+    () => (data.length ? data.reduce((a, b) => (a.date > b.date ? a : b)).date : "2026-01-01"),
+    [data],
+  );
+  const zones = useMemo(() => [...new Set(data.map((i) => i.zone))].sort(), [data]);
+
   const filtered = useMemo(() => {
     const days = PERIODS.find((p) => p.id === period)!.days;
     const cutoff = new Date(new Date(latest).getTime() - days * 86400000);
-    return INCIDENTS.filter(
+    return data.filter(
       (i) =>
         types.has(i.type) &&
         (!zone || i.zone === zone) &&
         (days === Infinity || new Date(i.date) >= cutoff),
     );
-  }, [types, period, zone]);
+  }, [data, types, period, zone, latest]);
 
   const sorted = useMemo(
     () =>
@@ -188,9 +210,11 @@ export default function IncidentExplorer() {
     popupRef.current = new maplibregl.Popup({ closeButton: true, maxWidth: "320px" })
       .setLngLat(coords)
       .setHTML(
-        `<div style="font-family:var(--font-sans);color:var(--ink);background:var(--bg-1);padding:14px 16px;border:1px solid var(--line-2)">
+        `<div style="font-family:var(--font-sans);color:var(--ink);background:var(--bg-1);padding:14px 16px;border:1px solid var(--line-2);max-height:300px;overflow-y:auto">
           <p style="font-family:var(--font-mono);font-size:11px;color:var(--ink-3)">${p.id} · ${p.date} · ${p.zone}</p>
           <p style="font-size:11px;text-transform:uppercase;letter-spacing:0.09em;margin-top:6px;color:${typeVar(p.type)}">${TYPE_LABELS[p.type]}</p>
+          ${p.vessel ? `<p style="font-size:12.5px;margin-top:7px;color:var(--ink-2)"><strong style="color:var(--ink)">Vessel:</strong> ${p.vessel}</p>` : ""}
+          ${p.hostility ? `<p style="font-size:12.5px;margin-top:3px;color:var(--ink-2)"><strong style="color:var(--ink)">Hostility:</strong> ${p.hostility}</p>` : ""}
           <p style="font-size:13.5px;line-height:1.55;margin-top:8px">${p.summary}</p>
           <p style="font-size:11px;margin-top:10px"><a href="${source.url}" target="_blank" rel="noopener" style="color:var(--accent-text)">Source: ${source.name} ↗</a></p>
         </div>`,
@@ -251,6 +275,15 @@ export default function IncidentExplorer() {
     <div className="grid gap-10">
       {/* filters */}
       <div className="flex flex-wrap items-center gap-3">
+        <select
+          value={dataset}
+          onChange={(e) => { setDataset(e.target.value); setZone(""); setPeriod("all"); }}
+          className="cursor-pointer border border-[color:var(--accent)] bg-bg-0 px-2.5 py-1.5 text-sm text-ink rounded-r1"
+        >
+          {DATASETS.map((d) => (
+            <option key={d.id} value={d.id}>{d.label}</option>
+          ))}
+        </select>
         <div className="flex flex-wrap gap-2">
           {TYPE_ORDER.map((t) => (
             <button
@@ -286,7 +319,11 @@ export default function IncidentExplorer() {
           ))}
         </select>
         <p className="t-meta ml-auto" aria-live="polite">
-          {filtered.length} incident{filtered.length === 1 ? "" : "s"} · sample data
+          {loading
+            ? "loading archive…"
+            : `${filtered.length} incident${filtered.length === 1 ? "" : "s"} · ${
+                dataset === "asam" ? "NGA ASAM, public domain" : "sample data"
+              }`}
         </p>
       </div>
 
@@ -311,11 +348,12 @@ export default function IncidentExplorer() {
                 {th("date", "Date")}
                 {th("type", "Type")}
                 {th("zone", "Zone")}
+                <th>Vessel</th>
                 <th>Summary</th>
               </tr>
             </thead>
             <tbody>
-              {sorted.map((i) => (
+              {sorted.slice(0, 60).map((i) => (
                 <tr key={i.id} onClick={() => focusIncident(i)} className="cursor-pointer">
                   <td className="whitespace-nowrap font-mono text-[13px]">{fmt.format(new Date(i.date))}</td>
                   <td className="whitespace-nowrap">
@@ -323,11 +361,19 @@ export default function IncidentExplorer() {
                     {TYPE_LABELS[i.type]}
                   </td>
                   <td className="whitespace-nowrap">{i.zone}</td>
-                  <td className="min-w-[280px] text-[13.5px] leading-relaxed">{i.summary}</td>
+                  <td className="min-w-[140px] max-w-[220px] text-[12.5px] leading-snug">{i.vessel ?? "—"}</td>
+                  <td className="min-w-[260px] max-w-[420px] text-[13px] leading-relaxed">
+                    {i.summary.length > 220 ? i.summary.slice(0, 220) + "…" : i.summary}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          {sorted.length > 60 && (
+            <p className="t-meta mt-3">
+              showing the 60 most recent of {sorted.length} · refine with the filters or the map
+            </p>
+          )}
         </div>
       </div>
     </div>
