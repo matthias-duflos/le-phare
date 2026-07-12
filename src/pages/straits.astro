@@ -1,9 +1,90 @@
 ---
-import Stub from "../layouts/Stub.astro";
+import Base from "../layouts/Base.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import Sparkline from "../components/ui/Sparkline.astro";
+import LiveBaltic from "../components/straits/LiveBaltic";
+
+// Weekly transit series are sample data until the parquet pipeline lands (Phase 3).
+const chokepoints = [
+  { slug: "bab-el-mandeb", name: "Bab el-Mandeb", pts: [70, 68, 64, 55, 41, 33, 28], value: 28, delta: -3 },
+  { slug: "suez", name: "Suez Canal", pts: [78, 72, 66, 58, 49, 44, 41], value: 41, delta: -2 },
+  { slug: "good-hope", name: "Cape of Good Hope", pts: [38, 45, 52, 61, 66, 71, 74], value: 74, delta: 5 },
+  { slug: "hormuz", name: "Strait of Hormuz", pts: [86, 87, 85, 88, 90, 87, 88], value: 88, delta: 1 },
+  { slug: "malacca", name: "Malacca Strait", pts: [208, 214, 210, 209, 213, 212, 212], value: 212, delta: 0 },
+  { slug: "gibraltar", name: "Strait of Gibraltar", pts: [292, 296, 301, 298, 295, 297, 301], value: 301, delta: 4 },
+  { slug: "panama", name: "Panama Canal", pts: null },
+  { slug: "bosphorus", name: "Bosphorus", pts: null },
+  { slug: "danish-straits", name: "Danish Straits", pts: null },
+  { slug: "dover", name: "Strait of Dover", pts: null },
+  { slug: "taiwan-strait", name: "Taiwan Strait", pts: null },
+];
 ---
 
-<Stub
-  title="Strait Transit Monitor"
-  description="Weekly transits and average speeds across six chokepoints, with the Suez-versus-Cape rerouting index."
-  phase="In build · ships in Phase 3"
-/>
+<Base
+  title="Strait Transit Monitor · Le Phare"
+  description="Weekly transits across the world's chokepoints, the Suez-versus-Cape rerouting index, and live AIS over the Baltic approaches."
+>
+  <SiteHeader />
+
+  <div class="mx-auto max-w-[1320px] px-6">
+    <section class="border-b border-line py-16 md:py-20">
+      <h1 class="t-display max-w-[16ch] text-[clamp(2.4rem,5vw,4rem)]">
+        Strait Transit Monitor
+      </h1>
+      <p class="mt-6 max-w-[56ch] text-lg leading-relaxed text-ink-2">
+        Eleven chokepoints, watched weekly. Transit analytics ship with the
+        AIS parquet pipeline; meanwhile, the Baltic approaches below are live.
+      </p>
+    </section>
+
+    <!-- Live panel -->
+    <section class="border-b border-line py-14">
+      <h2 class="t-serif mb-2 text-3xl">Baltic approaches · live</h2>
+      <p class="mb-8 max-w-[60ch] text-sm text-ink-2">
+        Every AIS position currently broadcast in Finnish and nearby Baltic
+        waters, including the Gulf of Finland corridor. Open data, refreshed
+        every ten seconds. Amber is underway; steel is moored.
+      </p>
+      <LiveBaltic client:load />
+    </section>
+
+    <!-- Chokepoint grid -->
+    <section class="py-14">
+      <h2 class="t-serif mb-2 text-3xl">Weekly transits</h2>
+      <p class="mb-10 max-w-[60ch] text-sm text-ink-2">
+        Cargo transits per week by chokepoint. Sample series pending the
+        pipeline; the six instrumented straits first, the rest follow.
+      </p>
+      <div class="grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+        {
+          chokepoints.map((c) => (
+            <div id={c.slug} class="scroll-mt-28 border-t border-line-2 pt-4 target:bg-accent-wash">
+              <p class="t-serif text-xl">{c.name}</p>
+              {c.pts ? (
+                <>
+                  <Sparkline points={c.pts} width={200} height={44} class="mt-3" />
+                  <p class="t-meta t-num mt-2">
+                    {c.value} this week
+                    <span class={c.delta > 0 ? "!text-[color:var(--viz-2)]" : c.delta < 0 ? "!text-risk-text" : ""}>
+                      {" "}{c.delta > 0 ? `+${c.delta}` : c.delta === 0 ? "±0" : c.delta}
+                    </span>
+                    {" "}· sample
+                  </p>
+                </>
+              ) : (
+                <p class="t-meta mt-3">instrumented with the Phase 3 pipeline</p>
+              )}
+            </div>
+          ))
+        }
+      </div>
+      <p class="t-meta mt-12 border-t border-line pt-4">
+        Rerouting index (Cape vs Suez): 2.4 this week · sample · methodology
+        note ships with the pipeline
+      </p>
+    </section>
+  </div>
+
+  <SiteFooter />
+</Base>
