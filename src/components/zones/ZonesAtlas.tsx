@@ -22,8 +22,43 @@ export default function ZonesAtlas() {
   const mapDiv = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const [idx, setIdx] = useState(MONTHS.length - 1);
+  const [playing, setPlaying] = useState(false);
   const [incidents, setIncidents] = useState<any[]>([]);
   const month = MONTHS[idx];
+
+  // play the timeline like a film
+  useEffect(() => {
+    if (!playing) return;
+    const t = setInterval(() => {
+      setIdx((i) => {
+        if (i >= MONTHS.length - 1) {
+          setPlaying(false);
+          return i;
+        }
+        return i + 1;
+      });
+    }, 650);
+    return () => clearInterval(t);
+  }, [playing]);
+
+  const monthCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const i of incidents) {
+      const k = i.date.slice(0, 7);
+      m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    return MONTHS.map((k) => m.get(k) ?? 0);
+  }, [incidents]);
+  const maxCount = Math.max(...monthCounts, 1);
+
+  const inZone = (z: Zone, i: any) => {
+    const lons = z.polygon.map((p) => p[0]);
+    const lats = z.polygon.map((p) => p[1]);
+    return (
+      i.lon >= Math.min(...lons) && i.lon <= Math.max(...lons) &&
+      i.lat >= Math.min(...lats) && i.lat <= Math.max(...lats)
+    );
+  };
 
   useEffect(() => {
     fetch("/data/incidents-asam.json")
@@ -133,34 +168,90 @@ export default function ZonesAtlas() {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center gap-5">
+      {/* controls */}
+      <div className="mb-2 flex flex-wrap items-center gap-4">
+        <button
+          onClick={() => {
+            if (!playing && idx >= MONTHS.length - 1) setIdx(0);
+            setPlaying((p) => !p);
+          }}
+          className="btn-beam t-caps cursor-pointer bg-accent !text-accent-ink rounded-r1 px-4 py-2"
+        >
+          {playing ? "Pause" : "Play the timeline"}
+        </button>
         <input
           type="range"
           min={0}
           max={MONTHS.length - 1}
           value={idx}
-          onChange={(e) => setIdx(Number(e.target.value))}
-          className="w-full max-w-md accent-[var(--accent)]"
+          onChange={(e) => { setPlaying(false); setIdx(Number(e.target.value)); }}
+          className="min-w-[200px] flex-1 accent-[var(--accent)]"
           aria-label="Month"
         />
-        <p className="t-num font-mono text-lg text-ink">{label(month)}</p>
-        <p className="t-meta ml-auto">
-          {activeZones.length} active area{activeZones.length === 1 ? "" : "s"} ·{" "}
-          {incGeo.features.length} incidents that month (ASAM)
-        </p>
+        <p className="t-num w-[90px] font-mono text-lg text-ink">{label(month)}</p>
       </div>
+
+      {/* monthly incident strip: context + scrubber */}
+      <div className="mb-5 flex h-12 items-end gap-[3px]" aria-hidden="true">
+        {monthCounts.map((c, i) => (
+          <button
+            key={MONTHS[i]}
+            onClick={() => { setPlaying(false); setIdx(i); }}
+            title={`${label(MONTHS[i])} · ${c} incidents`}
+            className="min-w-0 flex-1 cursor-pointer transition-opacity duration-150 hover:opacity-100"
+            style={{
+              height: `${Math.max((c / maxCount) * 100, 4)}%`,
+              background: i === idx ? "var(--accent)" : "var(--viz-context)",
+              opacity: i === idx ? 1 : 0.55,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* stats row */}
+      <div className="mb-4 flex flex-wrap gap-x-8 gap-y-1">
+        <p className="t-meta"><span className="t-num font-mono text-base text-ink">{activeZones.length}</span> active area{activeZones.length === 1 ? "" : "s"}</p>
+        <p className="t-meta"><span className="t-num font-mono text-base text-ink">{incGeo.features.length}</span> incidents that month · ASAM</p>
+        <p className="t-meta ml-auto">perimeters approximate · amber dots are that month's record</p>
+      </div>
+
       <div
         ref={mapDiv}
         className="h-[500px] w-full border border-line-2 [&_.maplibregl-ctrl-attrib]:!bg-bg-1 [&_.maplibregl-ctrl-attrib]:!text-ink-3 [&_.maplibregl-ctrl-attrib]:!text-[10px]"
       />
-      <div className="mt-4 grid gap-2">
-        {activeZones.map((z: Zone) => (
-          <p key={z.id} className="t-meta">
-            <span className="mr-2 inline-block size-[7px] align-middle" style={{ background: "var(--risk)" }} />
-            {z.name} · since {label(z.from)}
-            {z.to ? ` · retired ${label(z.to)}` : ""} · {z.source}
-          </p>
-        ))}
+
+      {/* zone cards */}
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {activeZones.map((z: Zone) => {
+          const n = incidents.filter((i) => i.date.slice(0, 7) === month && inZone(z, i)).length;
+          return (
+            <button
+              key={z.id}
+              onClick={() => {
+                const lons = z.polygon.map((p) => p[0]);
+                const lats = z.polygon.map((p) => p[1]);
+                mapRef.current?.fitBounds(
+                  [[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
+                  { padding: 60, duration: 900 },
+                );
+              }}
+              className="group cursor-pointer border border-line border-l-2 border-l-[color:var(--risk)] bg-bg-0 p-5 text-left transition-colors duration-150 hover:bg-bg-1"
+            >
+              <p className="t-serif text-lg transition-colors duration-150 group-hover:text-accent-text">{z.name}</p>
+              <p className="t-caps mt-1">{z.kind === "hra" ? "High risk area" : "Listed area"}</p>
+              <p className="t-meta mt-2">
+                since {label(z.from)}{z.to ? ` · retired ${label(z.to)}` : " · still active"}
+                <br />{z.source}
+              </p>
+              <p className="t-num mt-3 font-mono text-sm text-ink">
+                {n} incident{n === 1 ? "" : "s"} inside · {label(month)}
+              </p>
+            </button>
+          );
+        })}
+        {activeZones.length === 0 && (
+          <p className="bg-bg-0 p-5 text-sm text-ink-2">No listed area active at this date.</p>
+        )}
       </div>
     </div>
   );
