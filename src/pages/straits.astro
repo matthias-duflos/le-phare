@@ -3,7 +3,7 @@ import Base from "../layouts/Base.astro";
 import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import Sparkline from "../components/ui/Sparkline.astro";
-import LiveBaltic from "../components/straits/LiveBaltic";
+import LiveStraits from "../components/straits/LiveStraits";
 import weekly from "../data/transits-weekly.json";
 
 // Real weekly transit calls from IMF PortWatch (all vessel types).
@@ -34,13 +34,13 @@ const rerouting = weekly.rerouting.at(-1);
 
     <!-- Live panel -->
     <section class="border-b border-line py-14">
-      <h2 class="t-serif mb-2 text-3xl">Baltic approaches · live</h2>
-      <p class="mb-8 max-w-[60ch] text-sm text-ink-2">
-        Every AIS position currently broadcast in Finnish and nearby Baltic
-        waters, including the Gulf of Finland corridor. Open data, refreshed
-        every ten seconds. Amber is underway; steel is moored.
+      <h2 class="t-serif mb-2 text-3xl">Live watch</h2>
+      <p class="mb-8 max-w-[62ch] text-sm text-ink-2">
+        Pick a strait; the map connects to its live AIS feed. The Baltic is a
+        full snapshot (Digitraffic); the world's straits accumulate broadcasts
+        as they arrive (aisstream.io), a busy strait fills within seconds.
       </p>
-      <LiveBaltic client:load />
+      <LiveStraits client:load />
     </section>
 
     <!-- Chokepoint grid -->
