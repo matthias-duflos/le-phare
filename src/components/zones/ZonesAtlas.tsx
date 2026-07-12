@@ -5,14 +5,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import warzones from "../../data/warzones.json";
+import curated from "../../data/incidents.json";
 
 type Zone = (typeof warzones)["zones"][number];
 
 const MONTHS: string[] = [];
-for (let y = 2022; y <= 2024; y++)
+for (let y = 2022; y <= 2026; y++)
   for (let m = 1; m <= 12; m++) {
     const s = `${y}-${String(m).padStart(2, "0")}`;
-    if (s <= "2024-06") MONTHS.push(s);
+    if (s <= "2026-07") MONTHS.push(s);
   }
 
 const label = (m: string) =>
@@ -63,8 +64,8 @@ export default function ZonesAtlas() {
   useEffect(() => {
     fetch("/data/incidents-asam.json")
       .then((r) => r.json())
-      .then(setIncidents)
-      .catch(() => {});
+      .then((asam) => setIncidents([...asam, ...curated]))
+      .catch(() => setIncidents([...curated]));
   }, []);
 
   const activeZones = useMemo(
@@ -211,8 +212,11 @@ export default function ZonesAtlas() {
       {/* stats row */}
       <div className="mb-4 flex flex-wrap gap-x-8 gap-y-1">
         <p className="t-meta"><span className="t-num font-mono text-base text-ink">{activeZones.length}</span> active area{activeZones.length === 1 ? "" : "s"}</p>
-        <p className="t-meta"><span className="t-num font-mono text-base text-ink">{incGeo.features.length}</span> incidents that month · ASAM</p>
-        <p className="t-meta ml-auto">perimeters approximate · amber dots are that month's record</p>
+        <p className="t-meta"><span className="t-num font-mono text-base text-ink">{incGeo.features.length}</span> incidents that month · {month >= "2024-07" ? "curated, sample" : "ASAM"}</p>
+        <p className="t-meta ml-auto">
+          perimeters approximate · ASAM recorded piracy-type acts: state
+          seizures and jamming are under-counted
+        </p>
       </div>
 
       <div
