@@ -4,6 +4,7 @@ import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import IncidentExplorer from "../components/incidents/IncidentExplorer";
 import NavWarnings from "../components/incidents/NavWarnings";
+import AlertsFeed from "../components/data/AlertsFeed";
 import incidents from "../data/incidents.json";
 
 const jsonLd = {
@@ -45,14 +46,25 @@ const jsonLd = {
       <IncidentExplorer client:load />
     </section>
 
-    <section class="py-12">
-      <h2 class="t-serif mb-2 text-3xl">Active official warnings</h2>
-      <p class="mb-6 max-w-[60ch] text-sm text-ink-2">
-        Current NAVAREA and HYDRO broadcast warnings with a security dimension,
-        straight from the official feed. This is what fills the gap the closed
-        ASAM archive left: official, current, public domain.
-      </p>
-      <NavWarnings client:visible />
+    <section class="grid gap-14 py-12 lg:grid-cols-2">
+      <div>
+        <h2 class="t-serif mb-2 text-3xl">Active official warnings</h2>
+        <p class="mb-6 max-w-[52ch] text-sm text-ink-2">
+          Current NAVAREA and HYDRO broadcast warnings with a security
+          dimension: firings, launchings, mines, ordnance, interference.
+          Official, current, public domain.
+        </p>
+        <NavWarnings client:visible />
+      </div>
+      <div>
+        <h2 class="t-serif mb-2 text-3xl">Live alerts wire</h2>
+        <p class="mb-6 max-w-[52ch] text-sm text-ink-2">
+          Worldwide news mentions of maritime-risk events over the last seven
+          days, raw and unverified. What survives verification enters the
+          record above on Mondays.
+        </p>
+        <AlertsFeed max={18} timespan="7d" client:visible />
+      </div>
     </section>
   </div>
 

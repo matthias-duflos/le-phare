@@ -9,12 +9,12 @@ type Article = { url: string; title: string; domain: string; seendate: string };
 const QUERY = encodeURIComponent(
   '("red sea" OR "bab el-mandeb" OR "strait of hormuz" OR "suez canal" OR "shadow fleet" OR "gps jamming" OR piracy) (shipping OR vessel OR tanker OR maritime) sourcelang:english',
 );
-const URL_ = `https://api.gdeltproject.org/api/v2/doc/doc?query=${QUERY}&mode=artlist&maxrecords=24&timespan=48h&format=json&sort=datedesc`;
 
 const fmt = (s: string) =>
   `${s.slice(9, 11)}:${s.slice(11, 13)} UTC · ${s.slice(6, 8)}/${s.slice(4, 6)}`;
 
-export default function AlertsFeed() {
+export default function AlertsFeed({ max = 10, timespan = "48h" }: { max?: number; timespan?: string }) {
+  const URL_ = `https://api.gdeltproject.org/api/v2/doc/doc?query=${QUERY}&mode=artlist&maxrecords=${Math.min(max * 3, 75)}&timespan=${timespan}&format=json&sort=datedesc`;
   const [articles, setArticles] = useState<Article[] | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -29,7 +29,7 @@ export default function AlertsFeed() {
           if (seen.has(key)) continue;
           seen.add(key);
           out.push(a);
-          if (out.length >= 10) break;
+          if (out.length >= max) break;
         }
         setArticles(out);
       })
@@ -55,8 +55,8 @@ export default function AlertsFeed() {
         ))}
       </ol>
       <p className="t-meta mt-4">
-        GDELT news mentions, last 48 h · unverified, for research context only ·
-        not the incident database
+        GDELT news mentions, last {timespan.replace("h", " h").replace("d", " days")} ·
+        unverified, for research context only · not the incident database
       </p>
     </div>
   );

@@ -5,7 +5,8 @@
 import { writeFileSync } from "node:fs";
 
 const URL_ = "https://msi.nga.mil/api/publications/broadcast-warn?status=active&output=json";
-const HOSTILE = /attack|missile|drone|uav|usv|hostil|piracy|pirate|armed|seiz|hijack|mine danger|minefield|explos|jamming|gps interference|security threat|conflict|exclusion zone|avoid the area|warlike/i;
+const HOSTILE =
+  /attack|missile|drone|uav|usv|hostil|piracy|pirate|armed|seiz|hijack|mine danger|minefield|explos|jamming|gps interference|security threat|conflict|exclusion zone|avoid the area|warlike|firing|rocket|launching|gunnery|live fire|unexploded|ordnance|suspicious approach|military exercise|hazardous operations/i;
 
 const res = await fetch(URL_);
 if (!res.ok) throw new Error(`navwarn fetch failed ${res.status}`);
