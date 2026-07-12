@@ -3,6 +3,7 @@ import Base from "../layouts/Base.astro";
 import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import IncidentExplorer from "../components/incidents/IncidentExplorer";
+import NavWarnings from "../components/incidents/NavWarnings";
 import incidents from "../data/incidents.json";
 
 const jsonLd = {
@@ -40,8 +41,18 @@ const jsonLd = {
       </p>
     </section>
 
-    <section class="py-12">
+    <section class="border-b border-line py-12">
       <IncidentExplorer client:load />
+    </section>
+
+    <section class="py-12">
+      <h2 class="t-serif mb-2 text-3xl">Active official warnings</h2>
+      <p class="mb-6 max-w-[60ch] text-sm text-ink-2">
+        Current NAVAREA and HYDRO broadcast warnings with a security dimension,
+        straight from the official feed. This is what fills the gap the closed
+        ASAM archive left: official, current, public domain.
+      </p>
+      <NavWarnings client:visible />
     </section>
   </div>
 
