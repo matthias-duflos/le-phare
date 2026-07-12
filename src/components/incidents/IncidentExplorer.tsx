@@ -35,7 +35,7 @@ const TYPE_ORDER = Object.keys(TYPE_LABELS);
 const typeVar = (t: string) => `var(--viz-${TYPE_ORDER.indexOf(t) + 1})`;
 
 const YEARS = [
-  { id: "2026", label: "2026", note: "curated · sample" },
+  { id: "2026", label: "2026", note: "curated · public reporting" },
   { id: "2024", label: "2024", note: "NGA ASAM" },
   { id: "2023", label: "2023", note: "NGA ASAM" },
   { id: "2022", label: "2022", note: "NGA ASAM" },
@@ -374,7 +374,7 @@ export default function IncidentExplorer() {
           {loading
             ? "loading archive…"
             : `${filtered.length} incident${filtered.length === 1 ? "" : "s"} · ${
-                year === "2026" ? "curated from public reporting · sample" : year === "all" ? "ASAM + curated" : "NGA ASAM, public domain"
+                year === "2026" ? "curated from public reporting" : year === "all" ? "ASAM + curated" : "NGA ASAM, public domain"
               }`}
         </p>
       </div>
