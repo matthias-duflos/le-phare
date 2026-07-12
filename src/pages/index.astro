@@ -9,6 +9,7 @@ import Icon from "../components/Icon.astro";
 import Bathymetry from "../components/motifs/Bathymetry.astro";
 import WindRose from "../components/motifs/WindRose.astro";
 import ThreeGlobe from "../components/hero/ThreeGlobe";
+import LiveTicker from "../components/hero/LiveTicker.astro";
 
 const briefs = (await getCollection("briefs")).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
@@ -38,6 +39,12 @@ const modules = [
 
   <!-- Hero -->
   <section class="relative min-h-[calc(100dvh-61px)] overflow-hidden border-b border-line">
+    <!-- space depth behind the globe -->
+    <div
+      class="pointer-events-none absolute inset-0"
+      style="background: radial-gradient(46% 62% at 68% 52%, rgba(111,163,199,0.09) 0%, transparent 70%)"
+    >
+    </div>
     <div id="hero-globe-wrap" class="absolute inset-0">
       <ThreeGlobe client:load />
     </div>
@@ -54,9 +61,9 @@ const modules = [
     </div>
 
     <div class="pointer-events-none relative mx-auto flex min-h-[calc(100dvh-61px)] max-w-[1320px] flex-col justify-center px-6 pb-24">
-      <div class="pointer-events-auto max-w-[52ch]">
+      <div class="pointer-events-auto max-w-[780px]">
         <p class="t-caps mb-6" data-reveal>Maritime Risk Observatory</p>
-        <h1 id="hero-title" class="t-display max-w-[20ch] text-[clamp(2.3rem,4.6vw,4.1rem)]">
+        <h1 id="hero-title" class="t-display text-[clamp(2.5rem,4.85vw,4.4rem)]">
           The world's sea lanes, watched through <em>the dark.</em>
         </h1>
         <p class="mt-6 max-w-[42ch] text-lg leading-relaxed text-ink-2" data-reveal>
@@ -72,14 +79,15 @@ const modules = [
 
     <p
       id="globe-readout"
-      class="t-meta pointer-events-none absolute bottom-4 left-6 hidden md:block"
+      class="t-meta pointer-events-none absolute bottom-14 left-6 hidden md:block"
       aria-hidden="true"
     >
       CAM 048.0°E 14.0°N · VIIRS NIGHT
     </p>
-    <p class="t-meta pointer-events-none absolute bottom-4 right-6">
+    <p class="t-meta pointer-events-none absolute bottom-14 right-6 hidden md:block">
       Night imagery: NASA VIIRS Black Marble
     </p>
+    <LiveTicker />
   </section>
 
   <!-- Live figures -->

@@ -25,6 +25,18 @@ const AUTO_SPEED = 0.0011; // rad/frame-ish, one revolution ≈ 95 s
 const DAMPING = 0.93;
 const START_LON = 40;
 
+// trade arcs between chokepoints: amber pulses travel these
+const ARCS: Array<[string, string]> = [
+  ["gibraltar", "suez"],
+  ["suez", "bab-el-mandeb"],
+  ["bab-el-mandeb", "hormuz"],
+  ["bab-el-mandeb", "malacca"],
+  ["malacca", "taiwan-strait"],
+  ["dover", "danish-straits"],
+  ["panama", "gibraltar"],
+  ["good-hope", "malacca"],
+];
+
 const latLonToVec3 = (lat: number, lon: number, r: number) => {
   const phi = ((90 - lat) * Math.PI) / 180;
   const theta = ((lon + 180) * Math.PI) / 180;
@@ -90,6 +102,67 @@ export default function ThreeGlobe() {
       }),
     );
     scene.add(atmo);
+
+    // starfield: sparse, deep, drifting very slowly the other way
+    const starGeo = new THREE.BufferGeometry();
+    const starCount = 650;
+    const starPos = new Float32Array(starCount * 3);
+    const starCol = new Float32Array(starCount * 3);
+    const cSteel = new THREE.Color(0x9fb4cc);
+    const cAmber = new THREE.Color(0xf2b950);
+    for (let i = 0; i < starCount; i++) {
+      const v = new THREE.Vector3().randomDirection().multiplyScalar(18 + Math.random() * 22);
+      starPos.set([v.x, v.y, v.z], i * 3);
+      const c = Math.random() < 0.06 ? cAmber : cSteel;
+      const dim = 0.35 + Math.random() * 0.65;
+      starCol.set([c.r * dim, c.g * dim, c.b * dim], i * 3);
+    }
+    starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
+    starGeo.setAttribute("color", new THREE.BufferAttribute(starCol, 3));
+    const stars = new THREE.Points(
+      starGeo,
+      new THREE.PointsMaterial({
+        size: 0.055,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.8,
+        depthWrite: false,
+      }),
+    );
+    scene.add(stars);
+
+    // trade arcs + travelling pulses (inside the globe group so they rotate with it)
+    const bySlug = Object.fromEntries(CHOKEPOINTS.map((c) => [c.slug, c]));
+    const arcMat = new THREE.MeshBasicMaterial({
+      color: 0xf2b950,
+      transparent: true,
+      opacity: 0.22,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const pulseGeo = new THREE.SphereGeometry(0.011, 12, 12);
+    const pulseMat = new THREE.MeshBasicMaterial({
+      color: 0xf7c766,
+      transparent: true,
+      opacity: 0.95,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const pulses: Array<{ mesh: THREE.Mesh; curve: THREE.CubicBezierCurve3; dur: number; phase: number }> = [];
+    for (const [a, b] of ARCS) {
+      const va = latLonToVec3(bySlug[a].lat, bySlug[a].lon, 1.002);
+      const vb = latLonToVec3(bySlug[b].lat, bySlug[b].lon, 1.002);
+      const dist = va.distanceTo(vb);
+      const alt = 1 + dist * 0.28;
+      const c1 = va.clone().lerp(vb, 0.28).normalize().multiplyScalar(alt);
+      const c2 = va.clone().lerp(vb, 0.72).normalize().multiplyScalar(alt);
+      const curve = new THREE.CubicBezierCurve3(va, c1, c2, vb);
+      const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 48, 0.0022, 6), arcMat);
+      globe.add(tube);
+      const pulse = new THREE.Mesh(pulseGeo, pulseMat);
+      globe.add(pulse);
+      pulses.push({ mesh: pulse, curve, dur: 3800 + Math.random() * 3800, phase: Math.random() });
+    }
 
     // entrance state: revealed once the texture lands
     wrap.style.opacity = "0";
@@ -207,6 +280,14 @@ export default function ThreeGlobe() {
         atmo.scale.setScalar(s);
       }
 
+      // arcs pulse; stars drift opposite the spin
+      for (const p of pulses) {
+        const t = ((now / p.dur + p.phase) % 1 + 1) % 1;
+        p.mesh.position.copy(p.curve.getPoint(t));
+        (p.mesh.material as THREE.MeshBasicMaterial).opacity = 0.95 * Math.sin(t * Math.PI);
+      }
+      if (!reduce) stars.rotation.y += 0.00006;
+
       renderer.render(scene, camera);
 
       // project markers
@@ -259,6 +340,11 @@ export default function ThreeGlobe() {
       geo.dispose();
       mat.map?.dispose();
       mat.dispose();
+      starGeo.dispose();
+      (stars.material as THREE.Material).dispose();
+      arcMat.dispose();
+      pulseGeo.dispose();
+      pulseMat.dispose();
       renderer.domElement.remove();
     };
   }, []);
