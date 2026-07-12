@@ -1,9 +1,54 @@
 ---
-import Stub from "../layouts/Stub.astro";
+import Base from "../layouts/Base.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+
+const sources = [
+  { name: "NGA ASAM archive", url: "https://msi.nga.mil/Piracy", licence: "US Government work, public domain", use: "Historical incident records 2022-2024, including descriptions and vessel details. Programme defunded 30 June 2024." },
+  { name: "Fintraffic / Digitraffic marine AIS", url: "https://www.digitraffic.fi/en/marine-traffic/", licence: "CC BY 4.0", use: "Live AIS positions over Finnish and nearby Baltic waters, polled every ten seconds." },
+  { name: "UKMTO", url: "https://www.ukmto.org", licence: "Linked, never copied", use: "Advisories and warnings referenced in curated incidents and the weekly brief." },
+  { name: "MICA Center", url: "https://www.mica-center.org", licence: "Linked, never copied", use: "Gulf of Guinea and worldwide maritime security reporting, referenced." },
+  { name: "IMB Piracy Reporting Centre", url: "https://www.icc-ccs.org", licence: "Linked, never copied", use: "Piracy and armed robbery reporting, referenced." },
+  { name: "Joint War Committee circulars", url: "https://lmalloyds.com", licence: "Reconstructed perimeters only", use: "Listed-area geometry in the zones atlas is an approximate visualisation; the circulars remain authoritative." },
+  { name: "NASA GIBS · VIIRS Black Marble", url: "https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api", licence: "NASA open data, credited", use: "Night-lights Earth imagery on the home globe." },
+  { name: "OpenFreeMap / OpenMapTiles / OpenStreetMap", url: "https://openfreemap.org", licence: "ODbL (OSM), attribution on every map", use: "Vector basemap tiles restyled as the observatory's Abyss map style." },
+  { name: "Natural Earth", url: "https://www.naturalearthdata.com", licence: "Public domain", use: "Land geometry used in generated dot-grid assets." },
+];
 ---
 
-<Stub
-  title="Sources and licences"
-  description="Every source we read, its licence, and its conditions. We link; we never copy."
-  phase="In build · ships in Phase 4"
-/>
+<Base
+  title="Sources & licences · Le Phare"
+  description="Every source the observatory reads, its licence, and how it is used. We link, we never copy."
+>
+  <SiteHeader />
+
+  <div class="mx-auto max-w-[1320px] px-6">
+    <section class="border-b border-line py-16 md:py-20">
+      <h1 class="t-display max-w-[16ch] text-[clamp(2.4rem,5vw,4rem)]">Sources & licences</h1>
+      <p class="mt-6 max-w-[54ch] text-lg leading-relaxed text-ink-2">
+        Everything this observatory reads, and under what terms. The rule
+        everywhere: we link, we never copy.
+      </p>
+    </section>
+
+    <section class="py-10">
+      {
+        sources.map((s) => (
+          <div class="grid gap-x-10 gap-y-2 border-b border-line py-6 md:grid-cols-12">
+            <a href={s.url} rel="noopener" target="_blank" class="t-serif text-xl transition-colors duration-150 hover:text-accent-text md:col-span-4">
+              {s.name}
+            </a>
+            <p class="t-caps md:col-span-3">{s.licence}</p>
+            <p class="max-w-[60ch] text-sm leading-relaxed text-ink-2 md:col-span-5">{s.use}</p>
+          </div>
+        ))
+      }
+      <p class="t-meta mt-8">
+        Also standing on: Astro, MapLibre GL JS, three.js, Observable Plot, D3,
+        GSAP, Lenis, Newsreader, Inter and JetBrains Mono. Thank you.
+      </p>
+    </section>
+  </div>
+
+  <SiteFooter />
+</Base>

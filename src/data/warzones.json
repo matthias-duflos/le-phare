@@ -1,0 +1,50 @@
+{
+  "note": "Approximate perimeters for visualisation only, reconstructed from public circulars. Replace or refine per circular; format: from/to = YYYY-MM (to=null means still active).",
+  "zones": [
+    {
+      "id": "black-sea",
+      "name": "Black Sea / Sea of Azov",
+      "from": "2022-02",
+      "to": null,
+      "source": "JWC circular, February 2022",
+      "kind": "listed-area",
+      "polygon": [[27.5, 41.2], [42.0, 41.2], [42.0, 47.3], [27.5, 47.3]]
+    },
+    {
+      "id": "persian-gulf",
+      "name": "Persian Gulf & Hormuz approaches",
+      "from": "2019-05",
+      "to": null,
+      "source": "JWC circular, May 2019",
+      "kind": "listed-area",
+      "polygon": [[47.0, 23.5], [58.8, 23.5], [58.8, 30.5], [47.0, 30.5]]
+    },
+    {
+      "id": "southern-red-sea",
+      "name": "Southern Red Sea",
+      "from": "2023-12",
+      "to": null,
+      "source": "JWC expansion, December 2023",
+      "kind": "listed-area",
+      "polygon": [[40.0, 10.0], [45.0, 10.0], [45.0, 18.0], [40.0, 18.0]]
+    },
+    {
+      "id": "gulf-of-aden",
+      "name": "Gulf of Aden",
+      "from": "2023-12",
+      "to": null,
+      "source": "JWC expansion, December 2023",
+      "kind": "listed-area",
+      "polygon": [[43.5, 10.0], [54.0, 10.0], [54.0, 15.5], [43.5, 15.5]]
+    },
+    {
+      "id": "indian-ocean-hra",
+      "name": "Indian Ocean High Risk Area",
+      "from": "2022-01",
+      "to": "2022-09",
+      "source": "Industry HRA, retired September 2022",
+      "kind": "hra",
+      "polygon": [[45.0, -5.0], [65.0, -5.0], [65.0, 15.0], [45.0, 15.0]]
+    }
+  ]
+}

@@ -1,9 +1,49 @@
 ---
-import Stub from "../layouts/Stub.astro";
+import Base from "../layouts/Base.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import Logo from "../components/Logo.astro";
+
+// [PLACEHOLDER] — bio, LinkedIn URL and contact address below are explicitly
+// marked for Matthias to replace with his real details before deployment.
 ---
 
-<Stub
-  title="About Le Phare"
-  description="Who runs the observatory, why it exists, and how to reach out."
-  phase="In build · ships in Phase 4"
-/>
+<Base
+  title="About · Le Phare"
+  description="Who runs the maritime risk observatory, why it exists, and how to reach out."
+>
+  <SiteHeader />
+
+  <div class="mx-auto max-w-[1320px] px-6">
+    <section class="border-b border-line py-16 md:py-20">
+      <Logo size={44} />
+      <h1 class="t-display mt-6 max-w-[14ch] text-[clamp(2.4rem,5vw,4rem)]">About Le Phare</h1>
+      <div class="t-editorial mt-8 grid max-w-[62ch] gap-5">
+        <p>
+          <mark class="bg-accent-wash text-ink">[PLACEHOLDER — five lines:
+          student profile, programme, the maritime/insurance interest, one
+          concrete credential, one human detail.]</mark>
+        </p>
+        <p>
+          Le Phare began as a simple observation: the data that moves marine
+          insurance, transits, incidents, signal integrity, is largely public,
+          yet almost nowhere is it read carefully in the open. A lighthouse
+          does not chase ships; it stands still and makes the water legible.
+          This site tries to do the same with open data.
+        </p>
+        <p>
+          Everything here is independent student research: no client, no
+          affiliation, no market position. The methodology page says where
+          the data is weak; the sources page says where it comes from.
+        </p>
+      </div>
+      <p class="mt-10 flex flex-wrap gap-5">
+        <a href="#" class="link text-sm"><mark class="bg-accent-wash text-ink">[LinkedIn URL]</mark></a>
+        <a href="#" class="link text-sm"><mark class="bg-accent-wash text-ink">[contact email]</mark></a>
+        <a href="/rss.xml" class="link text-sm">RSS</a>
+      </p>
+    </section>
+  </div>
+
+  <SiteFooter />
+</Base>

@@ -1,9 +1,100 @@
 ---
-import Stub from "../layouts/Stub.astro";
+import Base from "../layouts/Base.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+
+const modules = [
+  {
+    name: "Incident database",
+    sources: "NGA ASAM archive (public domain, closed June 2024); UKMTO advisories, MICA Center and IMB PRC reporting for the current period, curated by hand.",
+    method: "Each event is typed by a keyword hierarchy (hijack > mine > jamming > seizure > strike > boarding), geocoded from the reported position, and zoned by bounding box. Vessel details are carried only when publicly reported by the source.",
+    limits: "ASAM understates robbery in under-reported regions and stopped updating in June 2024. Keyword typing misclassifies edge cases, roughly 3 to 5 percent on manual review. Curated 2026 entries are a sample, clearly labelled, until the live pipeline ships.",
+    frequency: "Archive: fixed. Curated period: weekly, with the brief.",
+  },
+  {
+    name: "Strait transit monitor",
+    sources: "AIS position data (parquet batches; live Baltic feed from Fintraffic Digitraffic, CC BY 4.0).",
+    method: "A transit is a track crossing a gate segment drawn across each strait, de-duplicated per vessel within a six-hour window. The rerouting index divides weekly Cape of Good Hope roundings by Suez transits.",
+    limits: "Gate counting misses transponder-dark passages by design. Coverage depends on receiver density, which is weaker mid-ocean. Weekly series are sample data until the parquet pipeline is connected.",
+    frequency: "Weekly once live; the Baltic panel refreshes every ten seconds.",
+  },
+  {
+    name: "AIS integrity watch",
+    sources: "Public AIS feeds, processed locally.",
+    method: "Five heuristics: jamming clusters, impossible jumps, speed anomalies, dark gaps above a duration threshold in sensitive zones, and positions on land. Counts are aggregated by zone and week.",
+    limits: "Heuristics measure the signal environment, not intent: a dark gap can be a failure, not a choice. Thresholds trade sensitivity for false positives and are documented in the repository. No vessel is ever identified, which is a deliberate cap on what this module can claim.",
+    frequency: "Weekly. Current figures are sample aggregates pending the pipeline.",
+  },
+  {
+    name: "War risk zones atlas",
+    sources: "Public circulars and industry notices (JWC listed areas, industry HRA notices).",
+    method: "Each area is stored as an approximate perimeter with a validity interval and its source circular, then rendered over the incident record of the selected month.",
+    limits: "Perimeters are reconstructions for visualisation, not the legal texts. The circulars themselves are the only authoritative reference; ours may lag or simplify.",
+    frequency: "On publication of relevant circulars.",
+  },
+  {
+    name: "Weekly risk brief",
+    sources: "Everything above, plus cited public reporting.",
+    method: "Around three hundred words and one chart, written by a human, with the chart following the observatory's figure conventions: the title states the conclusion, the source sits below.",
+    limits: "An editorial product: selective by design. What it omits is a judgement, and the judgement can be wrong.",
+    frequency: "Weekly, Mondays.",
+  },
+];
 ---
 
-<Stub
-  title="Methodology"
-  description="Sources, update frequencies, known biases and limits, module by module. The page that keeps us honest."
-  phase="In build · ships in Phase 4"
-/>
+<Base
+  title="Methodology · Le Phare"
+  description="Sources, methods, limits and biases of every module of the observatory, stated plainly."
+>
+  <SiteHeader />
+
+  <div class="mx-auto max-w-[1320px] px-6">
+    <section class="border-b border-line py-16 md:py-20">
+      <h1 class="t-display max-w-[14ch] text-[clamp(2.4rem,5vw,4rem)]">Methodology</h1>
+      <p class="mt-6 max-w-[58ch] text-lg leading-relaxed text-ink-2">
+        The page that keeps us honest. For every module: where the data comes
+        from, what we do to it, where it fails, and how often it moves.
+      </p>
+      <p class="t-editorial mt-8 max-w-[62ch]">
+        Three commitments hold across the site. We aggregate rather than
+        accuse: open AIS alone cannot attribute intent, so no module names a
+        vessel in a sensitive matter. We link rather than copy: every figure
+        carries its source. And we would rather publish a smaller, honest
+        number than a larger, fragile one.
+      </p>
+    </section>
+
+    <section class="py-6">
+      {
+        modules.map((m) => (
+          <div class="grid gap-x-10 gap-y-4 border-b border-line py-10 md:grid-cols-12">
+            <h2 class="t-serif text-2xl md:col-span-3">{m.name}</h2>
+            <dl class="grid gap-4 md:col-span-9">
+              {[
+                ["Sources", m.sources],
+                ["Method", m.method],
+                ["Limits & bias", m.limits],
+                ["Frequency", m.frequency],
+              ].map(([k, v]) => (
+                <div class="grid gap-1 sm:grid-cols-12">
+                  <dt class="t-caps sm:col-span-3">{k}</dt>
+                  <dd class="max-w-[68ch] text-sm leading-relaxed text-ink-2 sm:col-span-9">{v}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        ))
+      }
+    </section>
+
+    <section class="py-12">
+      <p class="t-meta max-w-[70ch]">
+        Corrections: if a figure or classification is wrong, write and it will
+        be corrected with a note. Errors are part of the method; hiding them
+        is not.
+      </p>
+    </section>
+  </div>
+
+  <SiteFooter />
+</Base>

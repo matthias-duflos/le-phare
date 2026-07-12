@@ -21,6 +21,14 @@ const { title, description } = Astro.props;
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
+    <link rel="canonical" href={Astro.url.href} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={Astro.url.href} />
+    <meta property="og:site_name" content="Le Phare · Maritime Risk Observatory" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="alternate" type="application/rss+xml" title="Weekly Maritime Risk Brief" href="/rss.xml" />
     <script is:inline>
       // Theme is dark by default; light is a stored preference.
       if (localStorage.getItem("phare-theme") === "light") {

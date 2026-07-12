@@ -1,9 +1,36 @@
 ---
-import Stub from "../layouts/Stub.astro";
+import Base from "../layouts/Base.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import ZonesAtlas from "../components/zones/ZonesAtlas";
 ---
 
-<Stub
-  title="War Risk Zones Atlas"
-  description="How listed areas moved, circular by circular, on an interactive timeline over the incident record."
-  phase="In build · ships in Phase 4"
-/>
+<Base
+  title="War Risk Zones Atlas · Le Phare"
+  description="How war-risk listed areas moved over time, circular by circular, overlaid with the real incident record."
+>
+  <SiteHeader />
+
+  <div class="mx-auto max-w-[1320px] px-6">
+    <section class="border-b border-line py-16 md:py-20">
+      <h1 class="t-display max-w-[16ch] text-[clamp(2.4rem,5vw,4rem)]">
+        War Risk Zones Atlas
+      </h1>
+      <p class="mt-6 max-w-[58ch] text-lg leading-relaxed text-ink-2">
+        Underwriters redraw the map faster than anyone else. Drag the timeline
+        to watch listed areas appear, expand and, occasionally, retire, over
+        the real incident record of each month.
+      </p>
+      <p class="t-meta mt-4">
+        Perimeters are approximate reconstructions from public circulars, for
+        visualisation only · incidents: NGA ASAM archive
+      </p>
+    </section>
+
+    <section class="py-14">
+      <ZonesAtlas client:load />
+    </section>
+  </div>
+
+  <SiteFooter />
+</Base>
