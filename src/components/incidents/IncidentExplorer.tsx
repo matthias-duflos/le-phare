@@ -223,6 +223,56 @@ export default function IncidentExplorer() {
     document.getElementById("incident-map")?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
+  /* ---------- charts row ---------- */
+  const zoneRef = useRef<HTMLDivElement>(null);
+  const typeRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const draw = () => {
+      const t = readTheme();
+      if (zoneRef.current) {
+        const byZone = Object.entries(
+          filtered.reduce((a: Record<string, number>, i) => ((a[i.zone] = (a[i.zone] ?? 0) + 1), a), {}),
+        )
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 8)
+          .map(([zone, n]) => ({ zone, n }));
+        zoneRef.current.replaceChildren(
+          Plot.plot({
+            ...plotDefaults(t),
+            height: 220,
+            marginLeft: 150,
+            x: { tickSize: 0, label: null, grid: true, gridStroke: t.grid },
+            y: { tickSize: 0, label: null },
+            marks: [
+              Plot.barX(byZone, { y: "zone", x: "n", fill: t.hero, insetTop: 1.5, insetBottom: 1.5, sort: { y: "-x" }, tip: true }),
+            ],
+          }),
+        );
+      }
+      if (typeRef.current) {
+        const byType = TYPE_ORDER.map((k) => ({
+          type: TYPE_LABELS[k],
+          n: filtered.filter((i) => i.type === k).length,
+          c: typeVar(k),
+        })).filter((d) => d.n > 0);
+        typeRef.current.replaceChildren(
+          Plot.plot({
+            ...plotDefaults(t),
+            height: 220,
+            marginLeft: 150,
+            x: { tickSize: 0, label: null, grid: true, gridStroke: t.grid },
+            y: { tickSize: 0, label: null },
+            marks: [
+              Plot.barX(byType, { y: "type", x: "n", fill: "c", insetTop: 1.5, insetBottom: 1.5, sort: { y: "-x" }, tip: true }),
+            ],
+          }),
+        );
+      }
+    };
+    draw();
+    return onThemeChange(draw);
+  }, [filtered]);
+
   /* ---------- monthly trend ---------- */
   const chartRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -267,14 +317,13 @@ export default function IncidentExplorer() {
     });
 
   const th = (key: "date" | "type" | "zone", label: string) => (
-    <th>
-      <button
-        className="t-caps cursor-pointer transition-colors duration-150 hover:!text-accent-text"
-        onClick={() => setSort((s) => ({ key, dir: s.key === key ? (s.dir === 1 ? -1 : 1) : -1 }))}
-      >
-        {label} {sort.key === key ? (sort.dir === 1 ? "↑" : "↓") : ""}
-      </button>
-    </th>
+    <button
+      key={key}
+      className={`t-caps cursor-pointer border rounded-r1 px-2.5 py-1 transition-colors duration-150 hover:!text-accent-text ${sort.key === key ? "border-line-2 !text-ink-2" : "border-transparent !text-ink-3"}`}
+      onClick={() => setSort((s) => ({ key, dir: s.key === key ? (s.dir === 1 ? -1 : 1) : -1 }))}
+    >
+      {label} {sort.key === key ? (sort.dir === 1 ? "↑" : "↓") : ""}
+    </button>
   );
 
   return (
@@ -337,50 +386,68 @@ export default function IncidentExplorer() {
         className="h-[480px] w-full border border-line-2 [&_.maplibregl-popup-content]:!bg-transparent [&_.maplibregl-popup-content]:!p-0 [&_.maplibregl-popup-content]:!shadow-none [&_.maplibregl-popup-tip]:!border-t-[color:var(--bg-1)] [&_.maplibregl-ctrl-attrib]:!bg-bg-1 [&_.maplibregl-ctrl-attrib]:!text-ink-3 [&_.maplibregl-ctrl-attrib]:!text-[10px] [&_.maplibregl-popup-close-button]:!text-ink-2 [&_.maplibregl-popup-close-button]:!text-lg [&_.maplibregl-popup-close-button]:!px-2"
       />
 
-      {/* trend + table */}
-      <div className="grid gap-12 lg:grid-cols-12">
-        <div className="lg:col-span-5">
+      {/* charts row, left to right */}
+      <div className="grid gap-10 md:grid-cols-2 xl:grid-cols-3">
+        <div>
           <p className="t-serif text-xl">Monthly trend</p>
           <p className="mt-1 text-sm text-ink-3">
             Incidents per month by type ·{" "}
             {year === "2026" ? "curated 2026, sample" : year === "all" ? "ASAM archive + curated 2026" : `NGA ASAM archive, ${year}`}
           </p>
-          <div ref={chartRef} className="mt-4" />
+          <div ref={chartRef} className="mt-4 [&_svg]:w-full" />
         </div>
-        <div className="overflow-x-auto lg:col-span-7">
-          <table className="data-table">
-            <thead>
-              <tr>
-                {th("date", "Date")}
-                {th("type", "Type")}
-                {th("zone", "Zone")}
-                <th>Vessel</th>
-                <th>Summary</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.slice(0, 60).map((i) => (
-                <tr key={i.id} onClick={() => focusIncident(i)} className="cursor-pointer">
-                  <td className="whitespace-nowrap font-mono text-[13px]">{fmt.format(new Date(i.date))}</td>
-                  <td className="whitespace-nowrap">
-                    <span className="mr-1.5 inline-block size-[7px]" style={{ background: typeVar(i.type) }} />
-                    {TYPE_LABELS[i.type]}
-                  </td>
-                  <td className="whitespace-nowrap">{i.zone}</td>
-                  <td className="min-w-[140px] max-w-[220px] text-[12.5px] leading-snug">{i.vessel ?? "—"}</td>
-                  <td className="min-w-[260px] max-w-[420px] text-[13px] leading-relaxed">
-                    {i.summary.length > 220 ? i.summary.slice(0, 220) + "…" : i.summary}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {sorted.length > 60 && (
-            <p className="t-meta mt-3">
-              showing the 60 most recent of {sorted.length} · refine with the filters or the map
-            </p>
-          )}
+        <div>
+          <p className="t-serif text-xl">Where</p>
+          <p className="mt-1 text-sm text-ink-3">Incidents by zone, top 8, current filters</p>
+          <div ref={zoneRef} className="mt-4 [&_svg]:w-full" />
         </div>
+        <div>
+          <p className="t-serif text-xl">What</p>
+          <p className="mt-1 text-sm text-ink-3">Incidents by type, current filters</p>
+          <div ref={typeRef} className="mt-4 [&_svg]:w-full" />
+        </div>
+      </div>
+
+      {/* incident cards, flowing left to right */}
+      <div>
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <p className="t-serif text-xl">The record</p>
+          <div className="ml-auto flex gap-2">
+            {th("date", "Date")}
+            {th("type", "Type")}
+            {th("zone", "Zone")}
+          </div>
+        </div>
+        <div className="grid gap-px bg-[color:var(--line)] sm:grid-cols-2 xl:grid-cols-3">
+          {sorted.slice(0, 30).map((i) => (
+            <button
+              key={i.id}
+              onClick={() => focusIncident(i)}
+              className="group cursor-pointer bg-bg-0 p-5 text-left transition-colors duration-150 hover:bg-bg-1"
+            >
+              <p className="t-meta flex justify-between gap-2">
+                <span>{fmt.format(new Date(i.date))} · {i.zone}</span>
+                <span>{i.id}</span>
+              </p>
+              <p className="t-caps mt-2" style={{ color: typeVar(i.type) }}>
+                <span className="mr-1.5 inline-block size-[7px] align-middle" style={{ background: typeVar(i.type) }} />
+                {TYPE_LABELS[i.type]}
+              </p>
+              {i.vessel && <p className="mt-2 text-[13px] font-medium text-ink">{i.vessel}</p>}
+              <p className="mt-2 text-[13px] leading-relaxed text-ink-2">
+                {i.summary.length > 170 ? i.summary.slice(0, 170) + "…" : i.summary}
+              </p>
+              <p className="t-meta mt-3 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                view on map →
+              </p>
+            </button>
+          ))}
+        </div>
+        {sorted.length > 30 && (
+          <p className="t-meta mt-3">
+            showing the 30 most recent of {sorted.length} · refine with the filters or the map
+          </p>
+        )}
       </div>
     </div>
   );
