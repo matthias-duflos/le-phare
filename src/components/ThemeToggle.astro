@@ -1,0 +1,28 @@
+<button
+  class="theme-toggle t-caps cursor-pointer border border-line-2 rounded-r1 px-3 py-1.5 !text-ink-2 transition-colors duration-200 hover:border-[color:var(--accent)] hover:!text-accent-text"
+  aria-pressed="false"
+>
+  Light mode
+</button>
+
+<script>
+  for (const btn of document.querySelectorAll<HTMLButtonElement>(".theme-toggle")) {
+    const setLabel = () => {
+      const light = document.documentElement.dataset.theme === "light";
+      btn.textContent = light ? "Dark mode" : "Light mode";
+      btn.setAttribute("aria-pressed", String(light));
+    };
+    btn.addEventListener("click", () => {
+      const light = document.documentElement.dataset.theme === "light";
+      if (light) {
+        delete document.documentElement.dataset.theme;
+        localStorage.setItem("phare-theme", "dark");
+      } else {
+        document.documentElement.dataset.theme = "light";
+        localStorage.setItem("phare-theme", "light");
+      }
+      setLabel();
+    });
+    setLabel();
+  }
+</script>

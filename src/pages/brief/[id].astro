@@ -1,0 +1,68 @@
+---
+import { getCollection, render } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import SiteHeader from "../../components/SiteHeader.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+import Figure from "../../components/ui/Figure.astro";
+import { HeroLineChart } from "../../components/charts/VizSamples";
+
+export async function getStaticPaths() {
+  const briefs = await getCollection("briefs");
+  return briefs.map((b) => ({ params: { id: b.id }, props: { brief: b } }));
+}
+
+const { brief } = Astro.props;
+const { Content } = await render(brief);
+const dateFmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric" });
+---
+
+<Base title={`${brief.data.title} · Le Phare`} description={brief.data.dek}>
+  <SiteHeader />
+
+  <article class="mx-auto max-w-[1320px] px-6">
+    <header class="border-b border-line py-14 md:py-18">
+      <p class="t-caps">Weekly risk brief · No. {brief.data.issue}</p>
+      <h1 class="t-display mt-5 max-w-[20ch] text-[clamp(2.2rem,4.6vw,3.8rem)]">
+        {brief.data.title}
+      </h1>
+      <p class="t-serif mt-5 max-w-[52ch] text-xl !text-[color:var(--ink-2)]">
+        {brief.data.dek}
+      </p>
+      <p class="t-meta mt-6">
+        {dateFmt.format(brief.data.date)} · covers {brief.data.period}
+      </p>
+    </header>
+
+    <div class="grid gap-12 py-14 lg:grid-cols-12">
+      <div class="prose-brief lg:col-span-7">
+        <Content />
+      </div>
+      <aside class="lg:col-span-5">
+        {
+          brief.data.chart === "transits" && (
+            <Figure
+              title="Bab el-Mandeb transits fell by two thirds"
+              subtitle="Weekly transits, cargo vessels above 10k dwt. Sample data."
+              source="Source: sample data for issue no. 1"
+            >
+              <HeroLineChart client:visible />
+            </Figure>
+          )
+        }
+        <div class="mt-10 border-t border-line-2 pt-4">
+          <p class="t-caps mb-3">Cite this issue</p>
+          <p class="t-meta select-all leading-relaxed" id="cite-text">
+            Le Phare, "{brief.data.title}", Weekly Maritime Risk Brief no.{" "}
+            {brief.data.issue}, {dateFmt.format(brief.data.date)}. lephare.example
+          </p>
+        </div>
+      </aside>
+    </div>
+
+    <footer class="border-t border-line py-8">
+      <a href="/brief" class="link text-sm">All issues</a>
+    </footer>
+  </article>
+
+  <SiteFooter />
+</Base>

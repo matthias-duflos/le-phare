@@ -1,14 +1,186 @@
 ---
-// Placeholder until Phase 1. The styleguide is the Phase 0 deliverable.
+import { getCollection } from "astro:content";
 import Base from "../layouts/Base.astro";
-import Logo from "../components/Logo.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import Button from "../components/ui/Button.astro";
+import Stat from "../components/ui/Stat.astro";
+import Icon from "../components/Icon.astro";
+import Bathymetry from "../components/motifs/Bathymetry.astro";
+import WindRose from "../components/motifs/WindRose.astro";
+import HeroMap from "../components/hero/HeroMap";
+
+const briefs = (await getCollection("briefs")).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+const latest = briefs[0];
+
+const dateFmt = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
+
+const modules = [
+  { href: "/incidents", icon: "mine", title: "Incident database", desc: "Geocoded and typed maritime incidents from public reporting.", status: "In build" },
+  { href: "/straits", icon: "strait", title: "Strait monitor", desc: "Weekly transits and speeds across six chokepoints, plus the rerouting index.", status: "In build" },
+  { href: "/anomalies", icon: "jamming", title: "AIS integrity watch", desc: "Jamming clusters, impossible jumps and dark gaps, aggregated by zone.", status: "In build" },
+  { href: "/zones", icon: "vessel", title: "War risk zones atlas", desc: "How listed areas moved, circular by circular, on an interactive timeline.", status: "In build" },
+  { href: "/brief", icon: "trend", title: "Weekly risk brief", desc: "Three hundred words and one chart, every Monday.", status: "Live" },
+  { href: "/glossary", icon: "anchor", title: "Maritime risk lexicon", desc: "The vocabulary of shipping and marine insurance, defined precisely.", status: "In build" },
+] as const;
 ---
 
-<Base title="Le Phare · Maritime Risk Observatory" description="Independent open-source maritime risk research.">
-  <div class="flex min-h-[100dvh] flex-col items-center justify-center gap-6 px-6 text-center">
-    <Logo size={56} />
-    <h1 class="t-display text-5xl">LE PHARE</h1>
-    <p class="text-ink-2">Maritime Risk Observatory. Under construction.</p>
-    <a href="/styleguide" class="link text-sm">Design system, Phase 0</a>
-  </div>
+<Base
+  title="Le Phare · Maritime Risk Observatory"
+  description="Independent open-source monitoring of maritime incidents, chokepoint transits and AIS integrity."
+>
+  <SiteHeader />
+
+  <!-- Hero -->
+  <section class="relative min-h-[calc(100dvh-61px)] overflow-hidden border-b border-line">
+    <HeroMap client:load />
+    <!-- readability scrim behind the headline -->
+    <div
+      class="pointer-events-none absolute inset-0"
+      style="background: radial-gradient(90% 70% at 28% 42%, var(--bg-0) 0%, transparent 62%)"
+    >
+    </div>
+
+    <div class="relative mx-auto flex min-h-[calc(100dvh-61px)] max-w-[1320px] flex-col justify-between px-6">
+      <div class="pt-16 md:pt-24">
+        <p class="t-caps mb-6" data-reveal>Maritime Risk Observatory</p>
+        <h1 id="hero-title" class="t-display max-w-[24ch] text-[clamp(2.5rem,5.4vw,4.9rem)]">
+          The world's sea lanes, watched through the dark.
+        </h1>
+        <p class="mt-7 max-w-[46ch] text-lg leading-relaxed text-ink-2" data-reveal>
+          Independent open-source monitoring of maritime incidents, chokepoint
+          transits and AIS integrity across the world's critical waters.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-4" data-reveal>
+          <Button href="/brief">Read the weekly brief</Button>
+          <Button href="/incidents" variant="secondary">Explore the incident map</Button>
+        </div>
+      </div>
+
+      <div class="grid gap-8 pb-10 pt-16 sm:grid-cols-3" data-reveal-stagger>
+        <Stat value={147} label="Incidents · last 30 days" detail="all monitored zones" accent />
+        <Stat value={28} label="Bab el-Mandeb transits" detail="weekly, cargo above 10k dwt" />
+        <Stat value={312} label="AIS anomalies flagged" detail="last 7 days, by zone" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Latest brief -->
+  {
+    latest && (
+      <section class="border-b border-line">
+        <div class="mx-auto grid max-w-[1320px] gap-10 px-6 py-20 md:grid-cols-12">
+          <div class="md:col-span-4" data-reveal>
+            <h2 class="t-serif text-3xl">This week's brief</h2>
+            <p class="t-meta mt-3">
+              No. {latest.data.issue} · {dateFmt.format(latest.data.date)}
+            </p>
+          </div>
+          <a href={`/brief/${latest.id}`} class="group block md:col-span-8" data-reveal>
+            <h3 class="t-serif text-[clamp(1.8rem,3.2vw,2.6rem)] transition-colors duration-200 group-hover:text-accent-text">
+              {latest.data.title}
+            </h3>
+            <p class="t-editorial mt-4 max-w-[58ch] !text-[color:var(--ink-2)]">{latest.data.dek}</p>
+            <span class="mt-6 inline-flex items-center gap-2 text-sm text-ink-2 transition-colors duration-200 group-hover:text-accent-text">
+              Read issue no. {latest.data.issue} <Icon name="arrow" size={16} />
+            </span>
+          </a>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Manifesto -->
+  <section class="relative overflow-hidden border-b border-line">
+    <WindRose size={340} opacity={0.05} class="absolute -right-20 top-1/2 -translate-y-1/2" />
+    <div class="mx-auto max-w-[1320px] px-6 py-24">
+      <p class="t-serif mx-auto max-w-[30ch] text-center text-[clamp(1.6rem,3vw,2.4rem)]" data-reveal>
+        We read the open data of the sea, so that risk is visible before it is
+        priced.
+      </p>
+      <p class="mt-6 text-center" data-reveal>
+        <a href="/methodology" class="link text-sm">How we work, and where we are wrong</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- Modules -->
+  <section class="relative border-b border-line">
+    <div class="mx-auto max-w-[1320px] px-6 py-20">
+      <h2 class="t-serif mb-12 text-3xl" data-reveal>The observatory</h2>
+      <div class="grid gap-px bg-[color:var(--line)] sm:grid-cols-2 lg:grid-cols-3" data-reveal-stagger>
+        {
+          modules.map((m) => (
+            <a
+              href={m.href}
+              class="group relative flex min-h-[210px] flex-col justify-between overflow-hidden bg-bg-0 p-7 transition-colors duration-200 hover:bg-bg-1"
+            >
+              {m.title === "Strait monitor" && <Bathymetry class="absolute inset-0 h-full w-full" opacity={0.06} />}
+              <span class="relative flex items-start justify-between">
+                <Icon name={m.icon} size={24} class="text-ink-2 transition-colors duration-200 group-hover:text-accent-text" />
+                <span class={`t-caps ${m.status === "Live" ? "!text-accent-text" : ""}`}>{m.status}</span>
+              </span>
+              <span class="relative">
+                <span class="t-serif block text-xl">{m.title}</span>
+                <span class="mt-2 block max-w-[36ch] text-sm leading-relaxed text-ink-2">{m.desc}</span>
+              </span>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <SiteFooter />
+
+  <script>
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+    import { SplitText } from "gsap/SplitText";
+
+    gsap.registerPlugin(ScrollTrigger, SplitText);
+
+    const mm = gsap.matchMedia();
+    mm.add("(prefers-reduced-motion: no-preference)", () => {
+      document.fonts.ready.then(() => {
+        const title = document.getElementById("hero-title");
+        if (title) {
+          const split = SplitText.create(title, { type: "lines", mask: "lines" });
+          gsap.from(split.lines, {
+            yPercent: 115,
+            duration: 1.1,
+            ease: "power4.out",
+            stagger: 0.13,
+            delay: 0.1,
+          });
+        }
+      });
+
+      for (const el of gsap.utils.toArray<HTMLElement>("[data-reveal]")) {
+        gsap.from(el, {
+          y: 24,
+          autoAlpha: 0,
+          duration: 0.8,
+          ease: "power3.out",
+          scrollTrigger: { trigger: el, start: "top 88%" },
+        });
+      }
+      for (const el of gsap.utils.toArray<HTMLElement>("[data-reveal-stagger]")) {
+        gsap.from(el.children, {
+          y: 26,
+          autoAlpha: 0,
+          duration: 0.7,
+          ease: "power3.out",
+          stagger: 0.08,
+          scrollTrigger: { trigger: el, start: "top 85%" },
+        });
+      }
+    });
+  </script>
 </Base>

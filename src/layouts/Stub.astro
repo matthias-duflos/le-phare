@@ -1,0 +1,30 @@
+---
+// Placeholder page for modules not yet shipped. No lorem, just the truth.
+import Base from "./Base.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import Bathymetry from "../components/motifs/Bathymetry.astro";
+
+interface Props {
+  title: string;
+  description: string;
+  phase: string;
+}
+const { title, description, phase } = Astro.props;
+---
+
+<Base title={`${title} · Le Phare`} description={description}>
+  <SiteHeader />
+  <section class="relative mx-auto min-h-[60dvh] max-w-[1320px] overflow-hidden px-6 py-24">
+    <Bathymetry class="absolute inset-0 h-full w-full" opacity={0.04} />
+    <div class="relative">
+      <p class="t-caps mb-5">{phase}</p>
+      <h1 class="t-display max-w-[18ch] text-[clamp(2.2rem,4.5vw,3.6rem)]">{title}</h1>
+      <p class="mt-6 max-w-[52ch] text-lg leading-relaxed text-ink-2">{description}</p>
+      <p class="mt-8">
+        <a href="/brief" class="link text-sm">Meanwhile, read the weekly brief</a>
+      </p>
+    </div>
+  </section>
+  <SiteFooter />
+</Base>

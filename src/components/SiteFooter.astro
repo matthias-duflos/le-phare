@@ -1,0 +1,53 @@
+---
+import Logo from "./Logo.astro";
+---
+
+<footer class="border-t border-line">
+  <div class="mx-auto grid max-w-[1320px] gap-10 px-6 py-14 md:grid-cols-12">
+    <div class="md:col-span-5">
+      <span class="flex items-center gap-3">
+        <Logo size={24} sweep={false} />
+        <span class="font-serif text-lg font-medium tracking-tight">LE PHARE</span>
+      </span>
+      <p class="mt-4 max-w-[44ch] text-sm leading-relaxed text-ink-2">
+        An independent observatory of maritime risk: incidents, chokepoint
+        transits and AIS integrity, read from open sources.
+      </p>
+    </div>
+    <nav aria-label="Footer" class="md:col-span-4">
+      <ul class="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+        {
+          [
+            ["/incidents", "Incident database"],
+            ["/straits", "Strait monitor"],
+            ["/anomalies", "AIS integrity"],
+            ["/zones", "War risk zones"],
+            ["/brief", "Weekly brief"],
+            ["/glossary", "Lexicon"],
+            ["/methodology", "Methodology"],
+            ["/about", "About"],
+          ].map(([href, label]) => (
+            <li>
+              <a href={href} class="text-ink-2 transition-colors duration-150 hover:text-accent-text">
+                {label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+    <div class="md:col-span-3">
+      <ul class="grid gap-2 text-sm">
+        <li><a href="/rss.xml" class="text-ink-2 transition-colors duration-150 hover:text-accent-text">RSS feed</a></li>
+        <li><a href="https://www.linkedin.com" rel="me noopener" class="text-ink-2 transition-colors duration-150 hover:text-accent-text">LinkedIn</a></li>
+        <li><a href="/sources" class="text-ink-2 transition-colors duration-150 hover:text-accent-text">Sources and licences</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="border-t border-line">
+    <p class="mx-auto max-w-[1320px] px-6 py-5 t-meta">
+      Independent student research. Not insurance, navigation or security advice.
+      Aggregated open-source data; may contain errors.
+    </p>
+  </div>
+</footer>

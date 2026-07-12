@@ -333,6 +333,42 @@ body {
 
 /* Scroll reveal initial state is applied by GSAP (no-JS stays visible) */
 
+/* Editorial prose (/brief bodies) ------------------------------------ */
+
+.prose-brief {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 16;
+  font-size: 1.155rem;
+  line-height: 1.72;
+  color: var(--ink);
+  max-width: 62ch;
+}
+.prose-brief p + p {
+  margin-top: 1.35em;
+}
+.prose-brief p:first-of-type::first-letter {
+  font-size: 3.1em;
+  font-weight: 500;
+  float: left;
+  line-height: 0.82;
+  padding-right: 0.09em;
+  color: var(--accent-text);
+}
+.prose-brief a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--line-2);
+  text-underline-offset: 3px;
+}
+.prose-brief a:hover {
+  color: var(--accent-text);
+  text-decoration-color: var(--accent-text);
+}
+.prose-brief em {
+  font-style: italic;
+  line-height: 1.1;
+}
+
 /* Tables ------------------------------------------------------------ */
 
 .data-table {

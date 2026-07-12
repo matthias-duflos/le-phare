@@ -1,0 +1,47 @@
+---
+import Logo from "./Logo.astro";
+import ThemeToggle from "./ThemeToggle.astro";
+
+const nav = [
+  { href: "/incidents", label: "Incidents" },
+  { href: "/straits", label: "Straits" },
+  { href: "/anomalies", label: "Anomalies" },
+  { href: "/zones", label: "Zones" },
+  { href: "/brief", label: "Brief" },
+  { href: "/glossary", label: "Glossary" },
+  { href: "/about", label: "About" },
+];
+const current = Astro.url.pathname;
+---
+
+<header class="sticky top-0 z-50 border-b border-line bg-bg-0/90 backdrop-blur-sm">
+  <div class="mx-auto flex max-w-[1320px] items-center justify-between gap-6 px-6 py-3">
+    <a href="/" class="flex shrink-0 items-center gap-3">
+      <Logo size={26} loop />
+      <span class="font-serif text-lg font-medium tracking-tight">LE PHARE</span>
+    </a>
+    <nav
+      aria-label="Main"
+      class="min-w-0 overflow-x-auto [mask-image:linear-gradient(to_right,black_88%,transparent)] md:[mask-image:none]"
+    >
+      <ul class="flex items-center gap-5 whitespace-nowrap text-sm">
+        {
+          nav.map((n) => (
+            <li>
+              <a
+                href={n.href}
+                aria-current={current.startsWith(n.href) ? "page" : undefined}
+                class={`transition-colors duration-150 hover:text-accent-text ${
+                  current.startsWith(n.href) ? "text-ink" : "text-ink-2"
+                }`}
+              >
+                {n.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+    <span class="hidden sm:block"><ThemeToggle /></span>
+  </div>
+</header>
