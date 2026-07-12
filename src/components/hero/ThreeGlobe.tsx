@@ -164,6 +164,32 @@ export default function ThreeGlobe() {
       pulses.push({ mesh: pulse, curve, dur: 3800 + Math.random() * 3800, phase: Math.random() });
     }
 
+    // instrument bezel: a graduated ring around the Earth, turning slowly.
+    // Lives in the camera-facing plane so it frames the globe at any size.
+    const bezel = new THREE.Group();
+    const bezelMat = new THREE.LineBasicMaterial({
+      color: 0x71869b,
+      transparent: true,
+      opacity: 0.3,
+    });
+    const ringPts: THREE.Vector3[] = [];
+    for (let i = 0; i <= 180; i++) {
+      const a = (i / 180) * Math.PI * 2;
+      ringPts.push(new THREE.Vector3(Math.cos(a) * 1.42, Math.sin(a) * 1.42, 0));
+    }
+    bezel.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(ringPts), bezelMat));
+    const tickPts: THREE.Vector3[] = [];
+    for (let d = 0; d < 360; d += 5) {
+      const a = (d * Math.PI) / 180;
+      const r1 = d % 30 === 0 ? 1.35 : 1.39;
+      tickPts.push(
+        new THREE.Vector3(Math.cos(a) * r1, Math.sin(a) * r1, 0),
+        new THREE.Vector3(Math.cos(a) * 1.42, Math.sin(a) * 1.42, 0),
+      );
+    }
+    bezel.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(tickPts), bezelMat));
+    scene.add(bezel);
+
     // entrance state: revealed once the texture lands
     wrap.style.opacity = "0";
     wrap.style.transition = "opacity 1.1s cubic-bezier(0.16,1,0.3,1)";
@@ -278,7 +304,9 @@ export default function ThreeGlobe() {
         const s = 0.92 + 0.08 * (1 - Math.pow(1 - p, 3));
         globe.scale.setScalar(s);
         atmo.scale.setScalar(s);
+        bezel.scale.setScalar(s);
       }
+      if (!reduce) bezel.rotation.z -= 0.00035;
 
       // arcs pulse; stars drift opposite the spin
       for (const p of pulses) {
@@ -342,6 +370,8 @@ export default function ThreeGlobe() {
       mat.dispose();
       starGeo.dispose();
       (stars.material as THREE.Material).dispose();
+      bezelMat.dispose();
+      bezel.children.forEach((c) => (c as THREE.Line).geometry.dispose());
       arcMat.dispose();
       pulseGeo.dispose();
       pulseMat.dispose();
