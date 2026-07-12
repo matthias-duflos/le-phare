@@ -156,9 +156,11 @@ export default function LiveStraits() {
         );
         setState("live");
       };
-      ws.onmessage = (ev) => {
+      ws.onmessage = async (ev) => {
         try {
-          const m = JSON.parse(ev.data);
+          // aisstream sends binary frames: Blob in browsers
+          const txt = typeof ev.data === "string" ? ev.data : await (ev.data as Blob).text();
+          const m = JSON.parse(txt);
           const meta = m.MetaData;
           const pr = m.Message?.PositionReport;
           if (!meta || !pr) return;
@@ -220,8 +222,9 @@ export default function LiveStraits() {
       />
       <p className="t-meta mt-3">
         Live AIS: Fintraffic Digitraffic (Baltic, CC BY 4.0) · aisstream.io
-        (world straits, positions as broadcast) · vessels fade after 12 min of
-        silence
+        (world straits, volunteer shore receivers: coverage varies, some
+        straits build slowly or stay sparse — Hormuz notably, where jamming
+        also suppresses AIS) · vessels fade after 12 min of silence
       </p>
     </div>
   );
