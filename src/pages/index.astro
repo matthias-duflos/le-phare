@@ -9,7 +9,6 @@ import Icon from "../components/Icon.astro";
 import Bathymetry from "../components/motifs/Bathymetry.astro";
 import WindRose from "../components/motifs/WindRose.astro";
 import ThreeGlobe from "../components/hero/ThreeGlobe";
-import LiveTicker from "../components/hero/LiveTicker.astro";
 import Sparkline from "../components/ui/Sparkline.astro";
 import Tag from "../components/ui/Tag.astro";
 
@@ -90,15 +89,14 @@ const modules = [
 
     <p
       id="globe-readout"
-      class="t-meta pointer-events-none absolute bottom-14 left-6 hidden md:block"
+      class="t-meta pointer-events-none absolute bottom-4 left-6 hidden md:block"
       aria-hidden="true"
     >
       CAM 048.0°E 14.0°N · VIIRS NIGHT
     </p>
-    <p class="t-meta pointer-events-none absolute bottom-14 right-6 hidden md:block">
+    <p class="t-meta pointer-events-none absolute bottom-4 right-6 hidden md:block">
       Night imagery: NASA VIIRS Black Marble
     </p>
-    <LiveTicker />
   </section>
 
   <!-- Live figures -->
