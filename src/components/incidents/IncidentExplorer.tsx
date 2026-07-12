@@ -34,24 +34,20 @@ export const TYPE_LABELS: Record<string, string> = {
 const TYPE_ORDER = Object.keys(TYPE_LABELS);
 const typeVar = (t: string) => `var(--viz-${TYPE_ORDER.indexOf(t) + 1})`;
 
-const DATASETS = [
-  { id: "asam", label: "2022-2024 · NGA ASAM archive" },
-  { id: "curated", label: "2026 · curated (sample)" },
-];
-
-const PERIODS = [
-  { id: "all", label: "Whole period", days: Infinity },
-  { id: "1y", label: "Last year of data", days: 365 },
-  { id: "90d", label: "Last 90 days of data", days: 90 },
+const YEARS = [
+  { id: "2026", label: "2026", note: "curated · sample" },
+  { id: "2024", label: "2024", note: "NGA ASAM" },
+  { id: "2023", label: "2023", note: "NGA ASAM" },
+  { id: "2022", label: "2022", note: "NGA ASAM" },
+  { id: "all", label: "All", note: "2022 → 2026" },
 ];
 
 const fmt = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "2-digit" });
 
 export default function IncidentExplorer() {
-  const [dataset, setDataset] = useState("asam");
+  const [year, setYear] = useState("2026");
   const [asam, setAsam] = useState<Incident[] | null>(null);
   const [types, setTypes] = useState<Set<string>>(new Set(TYPE_ORDER));
-  const [period, setPeriod] = useState("all");
   const [zone, setZone] = useState("");
   const [sort, setSort] = useState<{ key: "date" | "type" | "zone"; dir: 1 | -1 }>({ key: "date", dir: -1 });
 
@@ -63,24 +59,23 @@ export default function IncidentExplorer() {
       .catch(() => setAsam([]));
   }, []);
 
-  const data = dataset === "asam" ? (asam ?? []) : CURATED;
-  const loading = dataset === "asam" && asam === null;
-  const latest = useMemo(
-    () => (data.length ? data.reduce((a, b) => (a.date > b.date ? a : b)).date : "2026-01-01"),
-    [data],
+  const data = useMemo(() => [...CURATED, ...(asam ?? [])], [asam]);
+  const loading = asam === null && year !== "2026";
+  const zones = useMemo(
+    () => [...new Set(data.filter((i) => year === "all" || i.date.startsWith(year)).map((i) => i.zone))].sort(),
+    [data, year],
   );
-  const zones = useMemo(() => [...new Set(data.map((i) => i.zone))].sort(), [data]);
 
-  const filtered = useMemo(() => {
-    const days = PERIODS.find((p) => p.id === period)!.days;
-    const cutoff = new Date(new Date(latest).getTime() - days * 86400000);
-    return data.filter(
-      (i) =>
-        types.has(i.type) &&
-        (!zone || i.zone === zone) &&
-        (days === Infinity || new Date(i.date) >= cutoff),
-    );
-  }, [data, types, period, zone, latest]);
+  const filtered = useMemo(
+    () =>
+      data.filter(
+        (i) =>
+          (year === "all" || i.date.startsWith(year)) &&
+          types.has(i.type) &&
+          (!zone || i.zone === zone),
+      ),
+    [data, types, year, zone],
+  );
 
   const sorted = useMemo(
     () =>
@@ -235,13 +230,24 @@ export default function IncidentExplorer() {
       if (!chartRef.current) return;
       const t = readTheme();
       const monthly = filtered.map((i) => ({ month: i.date.slice(0, 7), type: TYPE_LABELS[i.type] }));
+      const months = [...new Set(monthly.map((m) => m.month))].sort();
+      const every = Math.max(1, Math.ceil(months.length / 8));
+      const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const fmtMonth = (m: string) => `${MONTH_NAMES[Number(m.slice(5, 7)) - 1]} ${m.slice(2, 4)}`;
       const el = Plot.plot({
         ...plotDefaults(t),
         height: 220,
         marginLeft: 28,
         color: { domain: TYPE_ORDER.map((k) => TYPE_LABELS[k]), range: t.series },
         y: { tickSize: 0, grid: true, gridStroke: t.grid, label: null, interval: 1 },
-        x: { tickSize: 0, label: null, type: "band" },
+        x: {
+          tickSize: 0,
+          label: null,
+          type: "band",
+          domain: months,
+          ticks: months.filter((_, i) => i % every === 0),
+          tickFormat: fmtMonth as any,
+        },
         marks: [
           Plot.barY(monthly, Plot.groupX({ y: "count" }, { x: "month", fill: "type", insetTop: 1, insetBottom: 1, tip: true })),
         ],
@@ -275,15 +281,21 @@ export default function IncidentExplorer() {
     <div className="grid gap-10">
       {/* filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <select
-          value={dataset}
-          onChange={(e) => { setDataset(e.target.value); setZone(""); setPeriod("all"); }}
-          className="cursor-pointer border border-[color:var(--accent)] bg-bg-0 px-2.5 py-1.5 text-sm text-ink rounded-r1"
-        >
-          {DATASETS.map((d) => (
-            <option key={d.id} value={d.id}>{d.label}</option>
+        <div className="flex flex-wrap gap-2">
+          {YEARS.map((y) => (
+            <button
+              key={y.id}
+              aria-pressed={year === y.id}
+              onClick={() => { setYear(y.id); setZone(""); }}
+              title={y.note}
+              className={`t-caps cursor-pointer border rounded-r1 px-3 py-1.5 transition-all duration-150 ${
+                year === y.id ? "border-[color:var(--accent)] !text-accent-text" : "border-line-2 !text-ink-3"
+              }`}
+            >
+              {y.label}
+            </button>
           ))}
-        </select>
+        </div>
         <div className="flex flex-wrap gap-2">
           {TYPE_ORDER.map((t) => (
             <button
@@ -300,15 +312,6 @@ export default function IncidentExplorer() {
           ))}
         </div>
         <select
-          value={period}
-          onChange={(e) => setPeriod(e.target.value)}
-          className="cursor-pointer border border-line-2 bg-bg-0 px-2.5 py-1.5 text-sm text-ink-2 rounded-r1"
-        >
-          {PERIODS.map((p) => (
-            <option key={p.id} value={p.id}>{p.label}</option>
-          ))}
-        </select>
-        <select
           value={zone}
           onChange={(e) => setZone(e.target.value)}
           className="cursor-pointer border border-line-2 bg-bg-0 px-2.5 py-1.5 text-sm text-ink-2 rounded-r1"
@@ -322,7 +325,7 @@ export default function IncidentExplorer() {
           {loading
             ? "loading archive…"
             : `${filtered.length} incident${filtered.length === 1 ? "" : "s"} · ${
-                dataset === "asam" ? "NGA ASAM, public domain" : "sample data"
+                year === "2026" ? "curated from public reporting · sample" : year === "all" ? "ASAM + curated" : "NGA ASAM, public domain"
               }`}
         </p>
       </div>
@@ -338,7 +341,10 @@ export default function IncidentExplorer() {
       <div className="grid gap-12 lg:grid-cols-12">
         <div className="lg:col-span-5">
           <p className="t-serif text-xl">Monthly trend</p>
-          <p className="mt-1 text-sm text-ink-3">Incidents per month by type. Sample data.</p>
+          <p className="mt-1 text-sm text-ink-3">
+            Incidents per month by type ·{" "}
+            {year === "2026" ? "curated 2026, sample" : year === "all" ? "ASAM archive + curated 2026" : `NGA ASAM archive, ${year}`}
+          </p>
           <div ref={chartRef} className="mt-4" />
         </div>
         <div className="overflow-x-auto lg:col-span-7">
