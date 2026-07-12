@@ -4,7 +4,7 @@ import Base from "../../layouts/Base.astro";
 import SiteHeader from "../../components/SiteHeader.astro";
 import SiteFooter from "../../components/SiteFooter.astro";
 import Figure from "../../components/ui/Figure.astro";
-import { HeroLineChart } from "../../components/charts/VizSamples";
+import { BabWeeklyChart, ReroutingChart, WEEKLY_META } from "../../components/charts/BriefCharts";
 
 export async function getStaticPaths() {
   const briefs = await getCollection("briefs");
@@ -40,13 +40,22 @@ const dateFmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long"
       <aside class="lg:col-span-5">
         {
           brief.data.chart === "transits" && (
-            <Figure
-              title="Bab el-Mandeb transits fell by two thirds"
-              subtitle="Weekly transits, cargo vessels above 10k dwt. Sample data."
-              source="Source: sample data for issue no. 1"
-            >
-              <HeroLineChart client:visible />
-            </Figure>
+            <div class="grid gap-12">
+              <Figure
+                title={`Bab el-Mandeb holds near ${WEEKLY_META.bab} weekly transits`}
+                subtitle={`All vessel transit calls per week, last 27 weeks, to ${WEEKLY_META.updated}.`}
+                source="Source: IMF PortWatch"
+              >
+                <BabWeeklyChart client:visible />
+              </Figure>
+              <Figure
+                title={`The Cape carries ${WEEKLY_META.reroutingNow}× Suez's traffic`}
+                subtitle="Weekly Cape of Good Hope transits divided by Suez transits. Above 1: the long way round wins."
+                source="Source: IMF PortWatch"
+              >
+                <ReroutingChart client:visible />
+              </Figure>
+            </div>
           )
         }
         <div class="mt-10 border-t border-line-2 pt-4">

@@ -4,21 +4,15 @@ import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import Sparkline from "../components/ui/Sparkline.astro";
 import LiveBaltic from "../components/straits/LiveBaltic";
+import weekly from "../data/transits-weekly.json";
 
-// Weekly transit series are sample data until the parquet pipeline lands (Phase 3).
-const chokepoints = [
-  { slug: "bab-el-mandeb", name: "Bab el-Mandeb", pts: [70, 68, 64, 55, 41, 33, 28], value: 28, delta: -3 },
-  { slug: "suez", name: "Suez Canal", pts: [78, 72, 66, 58, 49, 44, 41], value: 41, delta: -2 },
-  { slug: "good-hope", name: "Cape of Good Hope", pts: [38, 45, 52, 61, 66, 71, 74], value: 74, delta: 5 },
-  { slug: "hormuz", name: "Strait of Hormuz", pts: [86, 87, 85, 88, 90, 87, 88], value: 88, delta: 1 },
-  { slug: "malacca", name: "Malacca Strait", pts: [208, 214, 210, 209, 213, 212, 212], value: 212, delta: 0 },
-  { slug: "gibraltar", name: "Strait of Gibraltar", pts: [292, 296, 301, 298, 295, 297, 301], value: 301, delta: 4 },
-  { slug: "panama", name: "Panama Canal", pts: null },
-  { slug: "bosphorus", name: "Bosphorus", pts: null },
-  { slug: "danish-straits", name: "Danish Straits", pts: null },
-  { slug: "dover", name: "Strait of Dover", pts: null },
-  { slug: "taiwan-strait", name: "Taiwan Strait", pts: null },
-];
+// Real weekly transit calls from IMF PortWatch (all vessel types).
+const ORDER = ["bab-el-mandeb", "suez", "good-hope", "hormuz", "malacca", "gibraltar", "panama", "bosphorus", "danish-straits", "dover", "taiwan-strait", "kerch"];
+const chokepoints = ORDER.map((slug) => {
+  const c = (weekly.chokepoints as any)[slug];
+  return { slug, name: c.name, pts: c.weekly.map((e: any) => e.t), value: c.last, delta: c.delta, week: c.week };
+});
+const rerouting = weekly.rerouting.at(-1);
 ---
 
 <Base
@@ -52,36 +46,30 @@ const chokepoints = [
     <!-- Chokepoint grid -->
     <section class="py-14">
       <h2 class="t-serif mb-2 text-3xl">Weekly transits</h2>
-      <p class="mb-10 max-w-[60ch] text-sm text-ink-2">
-        Cargo transits per week by chokepoint. Sample series pending the
-        pipeline; the six instrumented straits first, the rest follow.
+      <p class="mb-10 max-w-[62ch] text-sm text-ink-2">
+        Vessel transit calls per week, all types, last 27 weeks. Real data
+        from IMF PortWatch, updated weekly. Build your own view in the{" "}
+        <a href="/data" class="link">data lab</a>.
       </p>
       <div class="grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
         {
           chokepoints.map((c) => (
             <div id={c.slug} class="scroll-mt-28 border-t border-line-2 pt-4 target:bg-accent-wash">
               <p class="t-serif text-xl">{c.name}</p>
-              {c.pts ? (
-                <>
-                  <Sparkline points={c.pts} width={200} height={44} class="mt-3" />
-                  <p class="t-meta t-num mt-2">
-                    {c.value} this week
-                    <span class={c.delta > 0 ? "!text-[color:var(--viz-2)]" : c.delta < 0 ? "!text-risk-text" : ""}>
-                      {" "}{c.delta > 0 ? `+${c.delta}` : c.delta === 0 ? "±0" : c.delta}
-                    </span>
-                    {" "}· sample
-                  </p>
-                </>
-              ) : (
-                <p class="t-meta mt-3">instrumented with the Phase 3 pipeline</p>
-              )}
+              <Sparkline points={c.pts} width={200} height={44} class="mt-3" />
+              <p class="t-meta t-num mt-2">
+                {c.value} in {c.week?.slice(5)}
+                <span class={c.delta > 0 ? "!text-[color:var(--viz-2)]" : c.delta < 0 ? "!text-risk-text" : ""}>
+                  {" "}{c.delta > 0 ? `+${c.delta}` : c.delta === 0 ? "±0" : c.delta}
+                </span>
+              </p>
             </div>
           ))
         }
       </div>
       <p class="t-meta mt-12 border-t border-line pt-4">
-        Rerouting index (Cape vs Suez): 2.4 this week · sample · methodology
-        note ships with the pipeline
+        Rerouting index (Cape vs Suez): {rerouting?.idx} in {rerouting?.w.slice(5)} · above 1, the
+        long way round carries more traffic · Source: IMF PortWatch, updated {weekly.updated}
       </p>
     </section>
   </div>

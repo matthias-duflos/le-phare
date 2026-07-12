@@ -4,6 +4,7 @@ import Base from "../../layouts/Base.astro";
 import SiteHeader from "../../components/SiteHeader.astro";
 import SiteFooter from "../../components/SiteFooter.astro";
 import Icon from "../../components/Icon.astro";
+import AlertsFeed from "../../components/data/AlertsFeed";
 
 const briefs = (await getCollection("briefs")).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
@@ -29,6 +30,23 @@ const dateFmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long"
       <p class="t-meta mt-4">
         <a href="/rss.xml" class="link">RSS</a> · free, no signup
       </p>
+    </section>
+
+    <section class="grid gap-14 border-b border-line py-14 lg:grid-cols-12">
+      <div class="lg:col-span-7">
+        <h2 class="t-serif mb-6 text-2xl">The live wire</h2>
+        <AlertsFeed client:visible />
+      </div>
+      <div class="lg:col-span-5">
+        <h2 class="t-serif mb-6 text-2xl">How the brief is made</h2>
+        <p class="max-w-[48ch] text-sm leading-relaxed text-ink-2">
+          Every Monday: the week's transit data from the lab, the incident
+          record, the wire above for context, three hundred words, one to two
+          charts. The wire is raw news; only what survives verification
+          reaches the brief.
+        </p>
+        <p class="mt-4"><a href="/data" class="link text-sm">Open the data lab</a></p>
+      </div>
     </section>
 
     <section class="py-14">

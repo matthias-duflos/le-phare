@@ -11,6 +11,13 @@ import WindRose from "../components/motifs/WindRose.astro";
 import ThreeGlobe from "../components/hero/ThreeGlobe";
 import Sparkline from "../components/ui/Sparkline.astro";
 import Tag from "../components/ui/Tag.astro";
+import weekly from "../data/transits-weekly.json";
+
+const stats = {
+  bab: (weekly.chokepoints as any)["bab-el-mandeb"],
+  cape: (weekly.chokepoints as any)["good-hope"],
+  suez: (weekly.chokepoints as any)["suez"],
+};
 
 const briefs = (await getCollection("briefs")).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
@@ -105,9 +112,9 @@ const modules = [
       class="mx-auto grid max-w-[1320px] gap-y-8 px-6 py-12 sm:grid-cols-3 sm:divide-x sm:divide-[color:var(--line)] sm:[&>*]:px-8 sm:[&>*:first-child]:pl-0 sm:[&>*]:border-t-0"
       data-reveal-stagger
     >
-      <Stat value={147} label="Incidents · last 30 days" detail="all monitored zones" accent />
-      <Stat value={28} label="Bab el-Mandeb transits" detail="weekly, cargo above 10k dwt" />
-      <Stat value={312} label="AIS anomalies flagged" detail="last 7 days, by zone" />
+      <Stat value={stats.bab.last} label={`Bab el-Mandeb · ${stats.bab.week?.slice(5)}`} detail="weekly transit calls · IMF PortWatch" accent />
+      <Stat value={stats.suez.last} label={`Suez Canal · ${stats.suez.week?.slice(5)}`} detail="weekly transit calls · IMF PortWatch" />
+      <Stat value={stats.cape.last} label={`Cape of Good Hope · ${stats.cape.week?.slice(5)}`} detail="weekly transit calls · IMF PortWatch" />
     </div>
   </section>
 
