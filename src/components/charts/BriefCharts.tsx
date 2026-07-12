@@ -28,7 +28,7 @@ export function BabWeeklyChart() {
       marginLeft: 40,
       marginRight: 46,
       y: { tickSize: 0, grid: true, gridStroke: t.grid, label: null, nice: true },
-      x: { tickSize: 0, label: null, ticks: 6, tickFormat: wk as any, type: "band" },
+      x: { tickSize: 0, label: null, ticks: bab.filter((_, i) => i % 4 === 0).map((e) => e.w), tickFormat: wk as any, type: "band" },
       marks: [
         Plot.lineY(suez, { x: "w", y: "t", stroke: t.context, strokeWidth: 1.5, curve: "basis" }),
         Plot.lineY(bab, { x: "w", y: "t", stroke: t.hero, strokeWidth: 2, curve: "basis", tip: true }),
@@ -48,7 +48,7 @@ export function ReroutingChart() {
       height: 220,
       marginLeft: 40,
       y: { tickSize: 0, grid: true, gridStroke: t.grid, label: null, domain: [0, Math.max(...rows.map((r) => r.idx!)) * 1.15] },
-      x: { tickSize: 0, label: null, ticks: 6, tickFormat: wk as any, type: "band" },
+      x: { tickSize: 0, label: null, ticks: rows.filter((_, i) => i % 4 === 0).map((e) => e.w), tickFormat: wk as any, type: "band" },
       marks: [
         Plot.ruleY([1], { stroke: t.ink3, strokeDasharray: "2,4" }),
         Plot.areaY(rows, { x: "w", y: "idx", fill: t.hero, fillOpacity: 0.14, curve: "basis" }),

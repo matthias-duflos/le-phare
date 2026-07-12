@@ -1,0 +1,29 @@
+# Auto-refreshes the observatory's data and generates the weekly brief,
+# every Monday 06:10 UTC (after PortWatch's weekly update lands).
+# The push triggers the site deployment.
+name: weekly-brief
+on:
+  schedule:
+    - cron: "10 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/fetch-portwatch.mjs
+      - run: node scripts/fetch-navarea.mjs
+      - run: node scripts/make-brief.mjs
+      - name: commit & push
+        run: |
+          git config user.name "le-phare-bot"
+          git config user.email "bot@lephare.example"
+          git add -A
+          git diff --cached --quiet || git commit -m "data: weekly refresh + auto brief"
+          git push
