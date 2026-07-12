@@ -289,6 +289,20 @@ body {
   }
 }
 
+.map-marker-link {
+  cursor: pointer;
+  text-decoration: none;
+}
+.map-marker-link:hover,
+.map-marker-link:focus-visible {
+  border-color: #f7c766;
+  background: rgba(242, 185, 80, 0.55);
+}
+.map-marker-link:hover .map-marker-label,
+.map-marker-link:focus-visible .map-marker-label {
+  color: var(--accent);
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .map-marker::after {
     content: "";

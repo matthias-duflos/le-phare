@@ -53,8 +53,8 @@ const modules = [
     >
     </div>
 
-    <div class="relative mx-auto flex min-h-[calc(100dvh-61px)] max-w-[1320px] flex-col justify-center px-6 pb-24">
-      <div class="max-w-[52ch]">
+    <div class="pointer-events-none relative mx-auto flex min-h-[calc(100dvh-61px)] max-w-[1320px] flex-col justify-center px-6 pb-24">
+      <div class="pointer-events-auto max-w-[52ch]">
         <p class="t-caps mb-6" data-reveal>Maritime Risk Observatory</p>
         <h1 id="hero-title" class="t-display max-w-[20ch] text-[clamp(2.3rem,4.6vw,4.1rem)]">
           The world's sea lanes, watched through <em>the dark.</em>
@@ -72,12 +72,14 @@ const modules = [
 
     <p
       id="globe-readout"
-      class="t-meta absolute bottom-4 left-6 hidden md:block"
+      class="t-meta pointer-events-none absolute bottom-4 left-6 hidden md:block"
       aria-hidden="true"
     >
       CAM 048.0°E 14.0°N · VIIRS NIGHT
     </p>
-    <p class="t-meta absolute bottom-4 right-6">Night imagery: NASA VIIRS Black Marble</p>
+    <p class="t-meta pointer-events-none absolute bottom-4 right-6">
+      Night imagery: NASA VIIRS Black Marble
+    </p>
   </section>
 
   <!-- Live figures -->

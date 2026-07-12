@@ -10,18 +10,18 @@ import "maplibre-gl/dist/maplibre-gl.css";
 const TILES =
   "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_Black_Marble/default/2016-01-01/GoogleMapsCompatible_Level8/{z}/{y}/{x}.png";
 
-const CHOKEPOINTS: Array<{ name: string; lnglat: [number, number] }> = [
-  { name: "Bab el-Mandeb", lnglat: [43.4, 12.6] },
-  { name: "Suez", lnglat: [32.5, 30] },
-  { name: "Good Hope", lnglat: [18.4, -34.9] },
-  { name: "Hormuz", lnglat: [56.5, 26.5] },
-  { name: "Malacca", lnglat: [100.5, 3] },
-  { name: "Gibraltar", lnglat: [-5.6, 35.9] },
-  { name: "Panama", lnglat: [-79.7, 9.1] },
-  { name: "Bosphorus", lnglat: [29.1, 41.1] },
-  { name: "Danish Straits", lnglat: [12.6, 55.9] },
-  { name: "Dover", lnglat: [1.5, 51.05] },
-  { name: "Taiwan Strait", lnglat: [119.5, 24.5] },
+const CHOKEPOINTS: Array<{ name: string; slug: string; lnglat: [number, number] }> = [
+  { name: "Bab el-Mandeb", slug: "bab-el-mandeb", lnglat: [43.4, 12.6] },
+  { name: "Suez", slug: "suez", lnglat: [32.5, 30] },
+  { name: "Good Hope", slug: "good-hope", lnglat: [18.4, -34.9] },
+  { name: "Hormuz", slug: "hormuz", lnglat: [56.5, 26.5] },
+  { name: "Malacca", slug: "malacca", lnglat: [100.5, 3] },
+  { name: "Gibraltar", slug: "gibraltar", lnglat: [-5.6, 35.9] },
+  { name: "Panama", slug: "panama", lnglat: [-79.7, 9.1] },
+  { name: "Bosphorus", slug: "bosphorus", lnglat: [29.1, 41.1] },
+  { name: "Danish Straits", slug: "danish-straits", lnglat: [12.6, 55.9] },
+  { name: "Dover", slug: "dover", lnglat: [1.5, 51.05] },
+  { name: "Taiwan Strait", slug: "taiwan-strait", lnglat: [119.5, 24.5] },
 ];
 
 const START_LNG = 48;
@@ -46,7 +46,16 @@ export default function HeroGlobe() {
 
     const map = new maplibregl.Map({
       container: container.current,
-      interactive: false,
+      // interactive, but only as a globe you can spin: no zoom, no pitch
+      interactive: true,
+      dragPan: true,
+      dragRotate: false,
+      scrollZoom: false,
+      doubleClickZoom: false,
+      touchZoomRotate: false,
+      touchPitch: false,
+      keyboard: false,
+      maxPitch: 0,
       attributionControl: false,
       fadeDuration: 0,
       center: [START_LNG, LAT],
@@ -92,9 +101,11 @@ export default function HeroGlobe() {
     });
 
     map.on("load", () => {
-      for (const { name, lnglat } of CHOKEPOINTS) {
-        const el = document.createElement("span");
-        el.className = "map-marker";
+      for (const { name, slug, lnglat } of CHOKEPOINTS) {
+        const el = document.createElement("a");
+        el.className = "map-marker map-marker-link";
+        el.href = `/straits#${slug}`;
+        el.setAttribute("aria-label", `${name} strait monitor`);
         el.style.width = "9px";
         el.style.height = "9px";
         const label = document.createElement("span");
@@ -116,24 +127,39 @@ export default function HeroGlobe() {
 
     let raf = 0;
     let running = false;
-    let t0 = 0;
+    let last = 0;
     let lastReadout = 0;
+    let userUntil = 0; // auto-spin holds off until this timestamp
+    let rampFrom = 0; // spin eases back in after user interaction
     const readout = document.getElementById("globe-readout");
     const fmtLng = (l: number) =>
       `${Math.abs(l).toFixed(1).padStart(5, "0")}°${l >= 0 ? "E" : "W"}`;
+    const fmtLat = (l: number) =>
+      `${Math.abs(l).toFixed(1).padStart(4, "0")}°${l >= 0 ? "N" : "S"}`;
+
     const spin = (now: number) => {
-      if (!t0) t0 = now;
-      const lng = ((START_LNG - ((now - t0) / 1000) * DEG_PER_SEC) % 360 + 540) % 360 - 180;
-      map.jumpTo({ center: [lng, LAT] });
+      const dt = last ? (now - last) / 1000 : 0;
+      last = now;
+      const c = map.getCenter();
+      const idle = now >= userUntil && !map.isMoving();
+      if (idle && dt) {
+        if (!rampFrom) rampFrom = now;
+        const ramp = Math.min((now - rampFrom) / 1500, 1); // ease back in
+        const lat = Math.max(Math.min(c.lat, 55), -55);
+        map.jumpTo({ center: [c.lng - DEG_PER_SEC * dt * ramp, lat] });
+      } else if (!idle) {
+        rampFrom = 0;
+      }
       if (readout && now - lastReadout > 180) {
         lastReadout = now;
-        readout.textContent = `CAM ${fmtLng(lng)} ${LAT.toFixed(1).padStart(4, "0")}°N · ROT 0.55°/s · VIIRS NIGHT`;
+        readout.textContent = `CAM ${fmtLng(c.lng)} ${fmtLat(c.lat)} · ROT ${idle ? "0.55°/s" : "MANUAL"} · VIIRS NIGHT`;
       }
       raf = requestAnimationFrame(spin);
     };
     const start = () => {
       if (!running && !reduce) {
         running = true;
+        last = 0;
         raf = requestAnimationFrame(spin);
       }
     };
@@ -141,6 +167,16 @@ export default function HeroGlobe() {
       running = false;
       cancelAnimationFrame(raf);
     };
+
+    // hand control to the user while they drag; resume gently after idle
+    const hold = () => {
+      userUntil = performance.now() + 2500;
+    };
+    map.on("dragstart", hold);
+    map.on("drag", hold);
+    map.on("dragend", () => {
+      userUntil = performance.now() + 2500;
+    });
     const io = new IntersectionObserver(([e]) => (e.isIntersecting ? start() : stop()), {
       threshold: 0.05,
     });
@@ -158,8 +194,7 @@ export default function HeroGlobe() {
     // outer wrapper owns the positioning: MapLibre's stylesheet forces
     // position:relative on its container, so the container can't be inset-0 itself
     <div
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0"
+      className="absolute inset-0"
       style={{
         maskImage:
           "linear-gradient(to bottom, transparent 0%, black 10%, black 88%, transparent 100%)",
