@@ -77,6 +77,47 @@ function Legend({ items }: { items: Array<{ label: string; swatch: string }> }) 
   );
 }
 
+// Draw-on entrance: stroked paths draw themselves, bars grow from the
+// baseline, labels fade in. Editorial meaning: the data arrives, layer
+// by layer, like a plot being traced in the watch room.
+function animateChart(root: HTMLElement) {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const ease = "cubic-bezier(0.16, 1, 0.3, 1)";
+
+  root.querySelectorAll<SVGPathElement>("path").forEach((p) => {
+    if (!p.getAttribute("stroke") || p.getAttribute("fill") !== "none") return;
+    const len = p.getTotalLength?.();
+    if (!len || len < 10) return;
+    p.style.strokeDasharray = `${len}`;
+    p.animate(
+      [{ strokeDashoffset: len }, { strokeDashoffset: 0 }],
+      { duration: 1400, easing: ease, fill: "backwards" },
+    ).finished.then(() => (p.style.strokeDasharray = ""));
+  });
+
+  const rects = [...root.querySelectorAll<SVGRectElement>("rect")];
+  rects.forEach((r) => {
+    r.style.transformBox = "fill-box";
+    r.style.transformOrigin = "center bottom";
+    const x = Number(r.getAttribute("x") ?? 0);
+    r.animate([{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }], {
+      duration: 700,
+      delay: Math.min(x * 0.9, 500),
+      easing: ease,
+      fill: "backwards",
+    });
+  });
+
+  root.querySelectorAll<SVGTextElement>("text").forEach((t) => {
+    t.animate([{ opacity: 0 }, { opacity: 1 }], {
+      duration: 600,
+      delay: 500,
+      easing: ease,
+      fill: "backwards",
+    });
+  });
+}
+
 function useChart(render: (t: ReturnType<typeof readTheme>) => (SVGSVGElement | HTMLElement) | null) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -85,6 +126,7 @@ function useChart(render: (t: ReturnType<typeof readTheme>) => (SVGSVGElement | 
       if (!ref.current) return;
       const el = render(readTheme());
       ref.current.replaceChildren(el ?? "");
+      animateChart(ref.current);
     };
     draw();
     const stop = onThemeChange(draw);

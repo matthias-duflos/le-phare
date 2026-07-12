@@ -255,6 +255,84 @@ body {
   }
 }
 
+/* Map markers -------------------------------------------------------- */
+
+.map-marker {
+  position: relative;
+  display: block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--accent);
+  background: rgba(242, 185, 80, 0.3);
+}
+.map-marker-risk {
+  border-color: var(--risk);
+  background: rgba(192, 57, 43, 0.35);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .map-marker::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border: 1.5px solid var(--accent);
+    opacity: 0;
+    animation: marker-pulse 2.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  }
+  .map-marker-risk::after {
+    border-color: var(--risk);
+    animation-duration: 1.9s;
+  }
+  @keyframes marker-pulse {
+    0% { transform: scale(1); opacity: 0.8; }
+    70%, 100% { transform: scale(2.6); opacity: 0; }
+  }
+}
+
+/* Beam loop — the lighthouse sweeps periodically ---------------------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  .beam-loop {
+    animation: beam-loop 9s var(--ease-out) 2s infinite;
+    transform-origin: 13.4px 6.9px;
+  }
+  @keyframes beam-loop {
+    0% { transform: rotate(0deg); opacity: 1; }
+    4% { opacity: 0.15; }
+    8% { transform: rotate(-38deg); opacity: 0; }
+    9% { transform: rotate(-38deg); opacity: 0.4; }
+    22% { transform: rotate(0deg); opacity: 1; }
+    100% { transform: rotate(0deg); opacity: 1; }
+  }
+}
+
+/* Primary button: light streak crosses on hover ----------------------- */
+
+.btn-beam {
+  position: relative;
+  overflow: hidden;
+}
+.btn-beam::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-18deg);
+  transition: left 0s;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .btn-beam:hover::before {
+    left: 120%;
+    transition: left 0.55s var(--ease-out);
+  }
+}
+
+/* Scroll reveal initial state is applied by GSAP (no-JS stays visible) */
+
 /* Tables ------------------------------------------------------------ */
 
 .data-table {

@@ -11,6 +11,7 @@ import Bathymetry from "../components/motifs/Bathymetry.astro";
 import WindRose from "../components/motifs/WindRose.astro";
 import { HeroLineChart, StackedBarChart, SmallMultiples } from "../components/charts/VizSamples";
 import MapPanel from "../components/map/MapPanel";
+import ParticleFlow from "../components/hero/ParticleFlow";
 
 const darkColors = [
   { token: "--bg-0", hex: "#0A1622", role: "Page. The abyss is the paper." },
@@ -77,7 +78,7 @@ const icons = [
   >
     <div class="mx-auto flex max-w-[1320px] items-center justify-between px-6 py-3">
       <span class="flex items-center gap-3">
-        <Logo size={26} />
+        <Logo size={26} loop />
         <span class="font-serif text-lg font-medium tracking-tight">LE PHARE</span>
         <span class="t-meta hidden sm:inline">styleguide · v0.1</span>
       </span>
@@ -93,14 +94,15 @@ const icons = [
 
   <div class="mx-auto max-w-[1320px] px-6">
     <!-- Masthead -->
-    <section class="relative grid gap-10 border-b border-line py-20 md:grid-cols-12">
+    <section class="relative grid gap-10 overflow-hidden border-b border-line py-20 md:grid-cols-12">
       <Bathymetry class="absolute inset-0 h-full w-full" opacity={0.045} />
+      <ParticleFlow client:load />
       <div class="relative md:col-span-8">
-        <p class="t-caps mb-6">Design system · Phase 0</p>
-        <h1 class="t-display text-[clamp(3rem,7vw,5.5rem)]">
+        <p class="t-caps mb-6" data-reveal>Design system · Phase 0</p>
+        <h1 id="masthead-title" class="t-display text-[clamp(3rem,7vw,5.5rem)]">
           A lighthouse sweeping<br />the dark of the oceans.
         </h1>
-        <p class="mt-8 max-w-[54ch] text-lg leading-relaxed text-ink-2">
+        <p class="mt-8 max-w-[54ch] text-lg leading-relaxed text-ink-2" data-reveal>
           Le Phare reads like a publication and behaves like an instrument.
           The abyss is the paper, light is the ink, and the amber beam marks
           only what matters.
@@ -113,8 +115,8 @@ const icons = [
 
     <!-- Principles -->
     <section class="border-b border-line py-16">
-      <h2 class="t-serif mb-10 text-3xl">Five principles</h2>
-      <ol class="grid gap-x-12 gap-y-8 md:grid-cols-2 lg:grid-cols-3">
+      <h2 class="t-serif mb-10 text-3xl" data-reveal>Five principles</h2>
+      <ol class="grid gap-x-12 gap-y-8 md:grid-cols-2 lg:grid-cols-3" data-reveal-stagger>
         {
           [
             ["The chart carries the conclusion", "Figure titles are statements, not descriptions. One hero series in amber, context in muted blues, events annotated on the axis, source in mono below."],
@@ -140,7 +142,7 @@ const icons = [
         One accent. The palette works in luminance steps, not in hues.
         Light mode swaps the same roles onto cool paper.
       </p>
-      <div class="grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-4" data-reveal-stagger>
         {
           darkColors.map((c) => (
             <div>
@@ -178,13 +180,13 @@ const icons = [
 
     <!-- Typography -->
     <section class="border-b border-line py-16">
-      <h2 class="t-serif mb-2 text-3xl">Typography</h2>
+      <h2 class="t-serif mb-2 text-3xl" data-reveal>Typography</h2>
       <p class="mb-12 max-w-[60ch] text-sm text-ink-2">
         Newsreader carries the argument, Inter runs the instruments,
         JetBrains Mono keeps the ship's log.
       </p>
 
-      <div class="grid gap-10">
+      <div class="grid gap-10" data-reveal-stagger>
         {
           typeScale.map((t) => (
             <div class="grid items-baseline gap-2 md:grid-cols-12">
@@ -228,7 +230,7 @@ const icons = [
       </div>
 
       <!-- Serif alternative -->
-      <div class="mt-16 grid gap-8 border-t border-line pt-10 lg:grid-cols-2">
+      <div class="mt-16 grid gap-8 border-t border-line pt-10 lg:grid-cols-2" data-reveal-stagger>
         <div>
           <p class="t-caps mb-4">Recommended · Newsreader</p>
           <p class="t-display text-[2.6rem]">Suez transits have halved since November</p>
@@ -261,7 +263,7 @@ const icons = [
         A custom maritime set: 20 px grid, 1.5 stroke, square terminals,
         drawn to sit next to JetBrains Mono.
       </p>
-      <div class="grid grid-cols-3 gap-px bg-[color:var(--line)] sm:grid-cols-4 lg:grid-cols-6">
+      <div class="grid grid-cols-3 gap-px bg-[color:var(--line)] sm:grid-cols-4 lg:grid-cols-6" data-reveal-stagger>
         {
           icons.map((i) => (
             <div class="flex flex-col items-center gap-3 bg-bg-0 py-8 transition-colors duration-200 hover:bg-bg-1">
@@ -275,9 +277,9 @@ const icons = [
 
     <!-- Components -->
     <section class="border-b border-line py-16">
-      <h2 class="t-serif mb-10 text-3xl">Components</h2>
+      <h2 class="t-serif mb-10 text-3xl" data-reveal>Components</h2>
 
-      <div class="grid gap-14">
+      <div class="grid gap-14" data-reveal-stagger>
         <div>
           <p class="t-caps mb-4">Actions</p>
           <div class="flex flex-wrap items-center gap-4">
@@ -362,13 +364,13 @@ const icons = [
 
     <!-- Dataviz -->
     <section class="border-b border-line py-16">
-      <h2 class="t-serif mb-2 text-3xl">Dataviz theme</h2>
+      <h2 class="t-serif mb-2 text-3xl" data-reveal>Dataviz theme</h2>
       <p class="mb-10 max-w-[62ch] text-sm text-ink-2">
         One theme shared by every chart. Categorical order is fixed and
         CVD-validated (worst adjacent ΔE 31.2); the hero series wears the beam.
       </p>
 
-      <div class="mb-12 flex flex-wrap gap-6">
+      <div class="mb-12 flex flex-wrap gap-6" data-reveal-stagger>
         {
           vizSeries.map((s) => (
             <div class="flex items-center gap-2">
@@ -409,7 +411,7 @@ const icons = [
 
     <!-- Map -->
     <section class="border-b border-line py-16">
-      <h2 class="t-serif mb-2 text-3xl">Map style · Abyss</h2>
+      <h2 class="t-serif mb-2 text-3xl" data-reveal>Map style · Abyss</h2>
       <p class="mb-10 max-w-[62ch] text-sm text-ink-2">
         A custom MapLibre style built for the observatory: water is the page
         itself, land recedes, no roads, no cities without purpose. Amber marks
@@ -421,12 +423,58 @@ const icons = [
 
     <!-- Motion -->
     <section class="border-b border-line py-16">
-      <h2 class="t-serif mb-2 text-3xl">Motion</h2>
-      <p class="mb-10 max-w-[62ch] text-sm text-ink-2">
+      <h2 class="t-serif mb-2 text-3xl" data-reveal>Motion</h2>
+      <p class="mb-10 max-w-[62ch] text-sm text-ink-2" data-reveal>
         Three durations, one curve. Every animation has an editorial meaning;
         under prefers-reduced-motion everything degrades to its final state.
       </p>
-      <div class="grid gap-6 md:grid-cols-3">
+
+      <div class="mb-14 overflow-x-auto" data-reveal>
+        <table class="data-table max-w-3xl">
+          <thead>
+            <tr><th>Gesture</th><th>Meaning</th><th>Tool</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Beam sweep, on load then every 9 s</td>
+              <td>the observatory is on watch</td>
+              <td class="font-mono text-[13px]">CSS keyframes</td>
+            </tr>
+            <tr>
+              <td>Masthead lines rise from a mask</td>
+              <td>the argument opens the page</td>
+              <td class="font-mono text-[13px]">GSAP SplitText</td>
+            </tr>
+            <tr>
+              <td>Sections reveal on scroll, staggered</td>
+              <td>density arrives in layers</td>
+              <td class="font-mono text-[13px]">GSAP ScrollTrigger</td>
+            </tr>
+            <tr>
+              <td>Charts draw themselves in viewport</td>
+              <td>the data is being traced</td>
+              <td class="font-mono text-[13px]">Web Animations API</td>
+            </tr>
+            <tr>
+              <td>Shipping-lane particles in the hero</td>
+              <td>traffic keeps moving through the dark</td>
+              <td class="font-mono text-[13px]">Canvas 2D</td>
+            </tr>
+            <tr>
+              <td>Map: camera drift, lane flow, pulsing incidents</td>
+              <td>the watch room leans in</td>
+              <td class="font-mono text-[13px]">MapLibre native</td>
+            </tr>
+            <tr>
+              <td>Counters count up, light streak on primary CTA</td>
+              <td>the data is alive; the beam passes</td>
+              <td class="font-mono text-[13px]">rAF · CSS</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid gap-6 md:grid-cols-3" data-reveal-stagger>
         <div class="border-t border-line-2 pt-3">
           <p class="t-num font-mono text-2xl">150ms</p>
           <p class="t-caps mt-2 !text-ink-2">Hover, focus</p>
@@ -454,6 +502,54 @@ const icons = [
       </p>
     </footer>
   </div>
+
+  <script>
+    // Scroll choreography — GSAP ScrollTrigger + SplitText (both free since 3.13).
+    // Guarded by matchMedia: reduced-motion users get the finished layout.
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+    import { SplitText } from "gsap/SplitText";
+
+    gsap.registerPlugin(ScrollTrigger, SplitText);
+
+    const mm = gsap.matchMedia();
+    mm.add("(prefers-reduced-motion: no-preference)", () => {
+      // wait for Newsreader before splitting lines, or breaks land wrong
+      document.fonts.ready.then(() => {
+        const title = document.getElementById("masthead-title");
+        if (title) {
+          const split = SplitText.create(title, { type: "lines", mask: "lines" });
+          gsap.from(split.lines, {
+            yPercent: 115,
+            duration: 1.1,
+            ease: "power4.out",
+            stagger: 0.14,
+            delay: 0.1,
+          });
+        }
+      });
+
+      for (const el of gsap.utils.toArray<HTMLElement>("[data-reveal]")) {
+        gsap.from(el, {
+          y: 24,
+          autoAlpha: 0,
+          duration: 0.8,
+          ease: "power3.out",
+          scrollTrigger: { trigger: el, start: "top 88%" },
+        });
+      }
+      for (const el of gsap.utils.toArray<HTMLElement>("[data-reveal-stagger]")) {
+        gsap.from(el.children, {
+          y: 26,
+          autoAlpha: 0,
+          duration: 0.7,
+          ease: "power3.out",
+          stagger: 0.07,
+          scrollTrigger: { trigger: el, start: "top 85%" },
+        });
+      }
+    });
+  </script>
 
   <script>
     const btn = document.getElementById("theme-toggle")!;

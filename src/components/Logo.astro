@@ -4,9 +4,11 @@
 interface Props {
   size?: number;
   sweep?: boolean;
+  loop?: boolean;
   class?: string;
 }
-const { size = 28, sweep = true, class: className = "" } = Astro.props;
+const { size = 28, sweep = true, loop = false, class: className = "" } = Astro.props;
+const beamClass = loop ? "beam-loop" : sweep ? "beam-sweep" : "";
 ---
 
 <svg
@@ -18,10 +20,7 @@ const { size = 28, sweep = true, class: className = "" } = Astro.props;
   class={className}
 >
   <!-- beam -->
-  <g
-    class={sweep ? "beam-sweep" : ""}
-    style="transform-origin: 13.4px 6.9px"
-  >
+  <g class={beamClass} style="transform-origin: 13.4px 6.9px">
     <path
       d="M13.6 5.9 L23 3.2 L23 6.4 Z"
       fill="var(--accent)"
