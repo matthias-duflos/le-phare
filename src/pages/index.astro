@@ -7,8 +7,7 @@ import Button from "../components/ui/Button.astro";
 import Stat from "../components/ui/Stat.astro";
 import Icon from "../components/Icon.astro";
 import Bathymetry from "../components/motifs/Bathymetry.astro";
-import WindRose from "../components/motifs/WindRose.astro";
-import HeroMap from "../components/hero/HeroMap";
+import HeroGlobe from "../components/hero/HeroGlobe";
 
 const briefs = (await getCollection("briefs")).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
@@ -39,35 +38,45 @@ const modules = [
 
   <!-- Hero -->
   <section class="relative min-h-[calc(100dvh-61px)] overflow-hidden border-b border-line">
-    <HeroMap client:load />
+    <HeroGlobe client:load />
     <!-- readability scrim behind the headline -->
     <div
-      class="pointer-events-none absolute inset-0"
-      style="background: radial-gradient(90% 70% at 28% 42%, var(--bg-0) 0%, transparent 62%)"
+      class="pointer-events-none absolute inset-0 hidden lg:block"
+      style="background: radial-gradient(75% 80% at 22% 45%, var(--bg-0) 0%, transparent 58%)"
+    >
+    </div>
+    <div
+      class="pointer-events-none absolute inset-0 lg:hidden"
+      style="background: linear-gradient(to bottom, var(--bg-0) 10%, transparent 62%)"
     >
     </div>
 
-    <div class="relative mx-auto flex min-h-[calc(100dvh-61px)] max-w-[1320px] flex-col justify-between px-6">
-      <div class="pt-16 md:pt-24">
+    <div class="relative mx-auto flex min-h-[calc(100dvh-61px)] max-w-[1320px] flex-col justify-center px-6 pb-24">
+      <div class="max-w-[52ch]">
         <p class="t-caps mb-6" data-reveal>Maritime Risk Observatory</p>
-        <h1 id="hero-title" class="t-display max-w-[24ch] text-[clamp(2.5rem,5.4vw,4.9rem)]">
+        <h1 id="hero-title" class="t-display max-w-[20ch] text-[clamp(2.3rem,4.6vw,4.1rem)]">
           The world's sea lanes, watched through the dark.
         </h1>
-        <p class="mt-7 max-w-[46ch] text-lg leading-relaxed text-ink-2" data-reveal>
-          Independent open-source monitoring of maritime incidents, chokepoint
-          transits and AIS integrity across the world's critical waters.
+        <p class="mt-6 max-w-[42ch] text-lg leading-relaxed text-ink-2" data-reveal>
+          Maritime incidents, chokepoint transits and AIS integrity, read from
+          open sources.
         </p>
         <div class="mt-8 flex flex-wrap gap-4" data-reveal>
           <Button href="/brief">Read the weekly brief</Button>
           <Button href="/incidents" variant="secondary">Explore the incident map</Button>
         </div>
       </div>
+    </div>
 
-      <div class="grid gap-8 pb-10 pt-16 sm:grid-cols-3" data-reveal-stagger>
-        <Stat value={147} label="Incidents · last 30 days" detail="all monitored zones" accent />
-        <Stat value={28} label="Bab el-Mandeb transits" detail="weekly, cargo above 10k dwt" />
-        <Stat value={312} label="AIS anomalies flagged" detail="last 7 days, by zone" />
-      </div>
+    <p class="t-meta absolute bottom-4 right-6">Night imagery: NASA VIIRS Black Marble</p>
+  </section>
+
+  <!-- Live figures -->
+  <section class="border-b border-line">
+    <div class="mx-auto grid max-w-[1320px] gap-8 px-6 py-12 sm:grid-cols-3" data-reveal-stagger>
+      <Stat value={147} label="Incidents · last 30 days" detail="all monitored zones" accent />
+      <Stat value={28} label="Bab el-Mandeb transits" detail="weekly, cargo above 10k dwt" />
+      <Stat value={312} label="AIS anomalies flagged" detail="last 7 days, by zone" />
     </div>
   </section>
 
@@ -96,24 +105,16 @@ const modules = [
     )
   }
 
-  <!-- Manifesto -->
-  <section class="relative overflow-hidden border-b border-line">
-    <WindRose size={340} opacity={0.05} class="absolute -right-20 top-1/2 -translate-y-1/2" />
-    <div class="mx-auto max-w-[1320px] px-6 py-24">
-      <p class="t-serif mx-auto max-w-[30ch] text-center text-[clamp(1.6rem,3vw,2.4rem)]" data-reveal>
-        We read the open data of the sea, so that risk is visible before it is
-        priced.
-      </p>
-      <p class="mt-6 text-center" data-reveal>
-        <a href="/methodology" class="link text-sm">How we work, and where we are wrong</a>
-      </p>
-    </div>
-  </section>
-
   <!-- Modules -->
   <section class="relative border-b border-line">
     <div class="mx-auto max-w-[1320px] px-6 py-20">
-      <h2 class="t-serif mb-12 text-3xl" data-reveal>The observatory</h2>
+      <div class="mb-12 max-w-[56ch]" data-reveal>
+        <h2 class="t-serif text-3xl">The observatory</h2>
+        <p class="t-serif mt-4 text-xl !text-[color:var(--ink-2)]">
+          We read the open data of the sea, so that risk is visible before it
+          is priced. <a href="/methodology" class="link text-sm align-middle">How we work</a>
+        </p>
+      </div>
       <div class="grid gap-px bg-[color:var(--line)] sm:grid-cols-2 lg:grid-cols-3" data-reveal-stagger>
         {
           modules.map((m) => (
