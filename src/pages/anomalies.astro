@@ -1,9 +1,153 @@
 ---
-import Stub from "../layouts/Stub.astro";
+import Base from "../layouts/Base.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import Stat from "../components/ui/Stat.astro";
+import Tag from "../components/ui/Tag.astro";
+import AnomalyChart from "../components/anomalies/AnomalyChart";
+
+// Sample aggregates until the pipeline ships. Aggregated by zone ONLY:
+// no vessel name, no MMSI, no IMO, ever — that guardrail is the module.
+const WEEKS = ["W22", "W23", "W24", "W25", "W26", "W27", "W28"];
+const ZONES = [
+  { name: "Strait of Hormuz", counts: [48, 55, 61, 52, 74, 83, 91] },
+  { name: "Black Sea", counts: [64, 58, 71, 66, 59, 62, 68] },
+  { name: "Gulf of Finland", counts: [12, 15, 14, 19, 24, 31, 38] },
+  { name: "Eastern Mediterranean", counts: [22, 26, 19, 24, 28, 25, 31] },
+  { name: "Southern Red Sea", counts: [18, 14, 21, 17, 23, 26, 29] },
+  { name: "Gulf of Guinea", counts: [9, 7, 11, 8, 12, 9, 13] },
+];
+const max = Math.max(...ZONES.flatMap((z) => z.counts));
+const totalW28 = ZONES.reduce((a, z) => a + z.counts[6], 0);
+const totalW27 = ZONES.reduce((a, z) => a + z.counts[5], 0);
+
+const HEURISTICS = [
+  { name: "Jamming cluster", tag: 6, desc: "Many vessels in one area simultaneously reporting displaced or circular positions: the signature of area GPS interference, not of any single ship." },
+  { name: "Impossible jump", tag: 3, desc: "A position sequence implying a speed no hull can reach. Flags teleporting tracks caused by spoofed or corrupted broadcasts." },
+  { name: "Speed anomaly", tag: 2, desc: "Reported speed over ground far outside a vessel class's envelope, sustained across several messages." },
+  { name: "Dark gap", tag: 5, desc: "A prolonged silence from a transponder inside a sensitive zone, bounded by normal broadcasts before and after. Counted only above a duration threshold." },
+  { name: "Position on land", tag: 4, desc: "Broadcast coordinates that place a vessel inland. Almost always interference or spoofing; occasionally a misconfigured transponder." },
+];
+
+// weekly totals by heuristic for the chart (sample)
+const chartRows = WEEKS.flatMap((week, i) => [
+  { week, heuristic: "Jamming cluster", count: [88, 92, 104, 96, 118, 129, 142][i] },
+  { week, heuristic: "Impossible jump", count: [31, 28, 36, 33, 41, 44, 49][i] },
+  { week, heuristic: "Speed anomaly", count: [18, 21, 17, 22, 19, 24, 26][i] },
+  { week, heuristic: "Dark gap", count: [24, 27, 22, 29, 31, 28, 34][i] },
+  { week, heuristic: "Position on land", count: [12, 7, 18, 6, 11, 11, 19][i] },
+]);
 ---
 
-<Stub
-  title="AIS Integrity Watch"
-  description="Jamming clusters, impossible jumps and prolonged dark gaps, aggregated by zone. Never by vessel."
-  phase="In build · ships in Phase 3"
-/>
+<Base
+  title="AIS Integrity Watch · Le Phare"
+  description="Weekly AIS integrity anomalies aggregated by zone: jamming clusters, impossible jumps, dark gaps, positions on land. Never by vessel."
+>
+  <SiteHeader />
+
+  <div class="mx-auto max-w-[1320px] px-6">
+    <section class="border-b border-line py-16 md:py-20">
+      <h1 class="t-display max-w-[16ch] text-[clamp(2.4rem,5vw,4rem)]">
+        AIS Integrity Watch
+      </h1>
+      <p class="mt-6 max-w-[58ch] text-lg leading-relaxed text-ink-2">
+        Where the world's positioning signal stops being trustworthy, week by
+        week. Five heuristics over public AIS, aggregated by zone.
+      </p>
+      <p class="t-meta mt-4">
+        Aggregated by zone only · never a vessel name, MMSI or IMO · sample
+        aggregates pending the pipeline
+      </p>
+    </section>
+
+    <!-- Weekly stats -->
+    <section class="border-b border-line py-12">
+      <div class="grid gap-8 sm:grid-cols-3 sm:divide-x sm:divide-[color:var(--line)] sm:[&>*]:px-8 sm:[&>*:first-child]:pl-0">
+        <Stat value={totalW28} label="Anomalies flagged · W28" detail={`${totalW28 - totalW27 >= 0 ? "+" : ""}${totalW28 - totalW27} vs W27`} accent />
+        <Stat value={91} label="Hormuz · W28" detail="highest zone this week" />
+        <Stat value={38} label="Gulf of Finland · W28" detail="tripled in seven weeks" />
+      </div>
+    </section>
+
+    <!-- Heatmap -->
+    <section class="border-b border-line py-14">
+      <h2 class="t-serif mb-2 text-3xl">Zones × weeks</h2>
+      <p class="mb-8 max-w-[60ch] text-sm text-ink-2">
+        Flagged anomalies per zone per week, all heuristics combined. The
+        brighter the cell, the noisier the zone.
+      </p>
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse text-sm" style="min-width:640px">
+          <thead>
+            <tr>
+              <th class="t-caps pb-3 pr-4 text-left font-semibold">Zone</th>
+              {WEEKS.map((w) => <th class="t-meta pb-3 text-center">{w}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {
+              ZONES.map((z) => (
+                <tr class="border-t border-line">
+                  <td class="whitespace-nowrap py-1.5 pr-4 text-ink">{z.name}</td>
+                  {z.counts.map((c) => (
+                    <td class="p-1">
+                      <span
+                        class="t-num flex h-11 items-center justify-center font-mono text-[13px]"
+                        style={`background: color-mix(in srgb, var(--accent) ${Math.round((c / max) * 72)}%, transparent); color: ${c / max > 0.55 ? "var(--accent-ink)" : "var(--ink-2)"}`}
+                      >
+                        {c}
+                      </span>
+                    </td>
+                  ))}
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+      <p class="t-meta mt-3">Sample aggregates · Graphic: Le Phare</p>
+    </section>
+
+    <!-- Weekly trend by heuristic -->
+    <section class="border-b border-line py-14">
+      <div class="grid gap-12 lg:grid-cols-12">
+        <div class="lg:col-span-6">
+          <h2 class="t-serif mb-2 text-3xl">What kind of noise</h2>
+          <p class="mb-6 max-w-[52ch] text-sm text-ink-2">
+            Weekly totals by heuristic. Jamming clusters dominate and are
+            still climbing; everything else is the long tail of a degraded
+            signal environment.
+          </p>
+          <AnomalyChart rows={chartRows} client:visible />
+          <p class="t-meta mt-3">Sample data · Graphic: Le Phare</p>
+        </div>
+        <div class="lg:col-span-6">
+          <h2 class="t-serif mb-6 text-3xl">The five heuristics</h2>
+          <dl class="grid gap-6">
+            {
+              HEURISTICS.map((h) => (
+                <div class="border-t border-line-2 pt-3">
+                  <dt class="flex items-center gap-3">
+                    <Tag label={h.name} viz={h.tag as 2 | 3 | 4 | 5 | 6} />
+                  </dt>
+                  <dd class="mt-2 max-w-[58ch] text-sm leading-relaxed text-ink-2">{h.desc}</dd>
+                </div>
+              ))
+            }
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <!-- Privacy stance -->
+    <section class="py-12">
+      <p class="t-serif max-w-[58ch] text-xl !text-[color:var(--ink-2)]">
+        This module never names a ship. Anomaly detection points at zones and
+        signal environments, not at vessels: attribution from open AIS alone
+        is unreliable, and this observatory does not do name-and-shame.
+      </p>
+    </section>
+  </div>
+
+  <SiteFooter />
+</Base>
