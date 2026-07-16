@@ -7,7 +7,7 @@ export async function GET(context) {
     title: "Le Phare · Weekly Maritime Risk Brief",
     description:
       "Three hundred words and one chart on maritime risk, every Monday.",
-    site: context.site ?? "https://lephare.example",
+    site: context.site ?? "https://le-phare.pages.dev",
     items: briefs
       .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
       .map((b) => ({

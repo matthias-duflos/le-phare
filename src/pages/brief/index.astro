@@ -10,6 +10,7 @@ const briefs = (await getCollection("briefs")).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
 );
 const dateFmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric" });
+const feedUrl = new URL("rss.xml", Astro.site ?? Astro.url.origin).href;
 ---
 
 <Base
@@ -30,6 +31,22 @@ const dateFmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long"
       <p class="t-meta mt-4">
         <a href="/rss.xml" class="link">RSS</a> · free, no signup
       </p>
+      <div class="mt-8 max-w-[52ch] border border-line-2 p-5">
+        <p class="t-caps mb-2">Every issue in your inbox</p>
+        <p class="text-sm leading-relaxed text-ink-2">
+          The brief ships as an RSS feed; any RSS-to-email relay turns it into
+          a Monday email. Paste the feed into
+          <a href="https://blogtrottr.com" class="link" rel="noopener">Blogtrottr</a>
+          (free) or the reader you already use:
+        </p>
+        <p class="t-num mt-3 select-all break-all font-mono text-[13px] text-ink" id="feed-url">
+          {feedUrl}
+        </p>
+        <p class="t-meta mt-2">
+          No list is kept on this side: your address goes to your relay, never
+          to the observatory.
+        </p>
+      </div>
     </section>
 
     <section class="grid gap-14 border-b border-line py-14 lg:grid-cols-12">

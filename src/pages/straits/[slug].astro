@@ -1,0 +1,125 @@
+---
+// State of the strait: one page per chokepoint fusing the weekly transit
+// series, the live AIS picture and the incident record of its waters.
+import Base from "../../layouts/Base.astro";
+import SiteHeader from "../../components/SiteHeader.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+import Stat from "../../components/ui/Stat.astro";
+import Figure from "../../components/ui/Figure.astro";
+import LiveStraits, { STRAITS } from "../../components/straits/LiveStraits";
+import StraitChart from "../../components/straits/StraitChart";
+import weekly from "../../data/transits-weekly.json";
+import incidents from "../../data/incidents.json";
+
+export function getStaticPaths() {
+  return Object.keys(weekly.chokepoints).map((slug) => ({ params: { slug } }));
+}
+
+const { slug } = Astro.params;
+const cp = (weekly.chokepoints as any)[slug!];
+const live = STRAITS.find((s) => s.slug === slug);
+
+// incidents in the strait's waters: live bbox padded outward
+const PAD = 2.5;
+const box = live?.bbox;
+const nearby = box
+  ? incidents
+      .filter(
+        (i) =>
+          i.lat >= box[0][0] - PAD && i.lat <= box[1][0] + PAD &&
+          i.lon >= box[0][1] - PAD && i.lon <= box[1][1] + PAD,
+      )
+      .sort((a, b) => b.date.localeCompare(a.date))
+  : [];
+
+const dateFmt = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+const statusLine =
+  cp.status && cp.status !== "normal"
+    ? `${cp.status} · ${cp.pct}% of its 2024-25 baseline${cp.trend ? ` · ${cp.trend}` : ""}`
+    : "running at its 2024-25 baseline";
+---
+
+<Base
+  title={`${cp.name} · State of the strait · Le Phare`}
+  description={`${cp.name}: ${cp.last} weekly transit calls (${statusLine}), live AIS picture and the incident record of its waters.`}
+>
+  <SiteHeader />
+
+  <div class="mx-auto max-w-[1320px] px-6">
+    <section class="border-b border-line py-14 md:py-18">
+      <p class="t-caps">State of the strait</p>
+      <h1 class="t-display mt-5 max-w-[18ch] text-[clamp(2.2rem,4.6vw,3.8rem)]">{cp.name}</h1>
+      <p class="t-meta mt-6">
+        week {cp.week?.slice(5)} · data to {weekly.updated} · IMF PortWatch
+      </p>
+    </section>
+
+    <section class="border-b border-line py-12">
+      <div class="grid gap-8 sm:grid-cols-3 sm:divide-x sm:divide-[color:var(--line)] sm:[&>*]:px-8 sm:[&>*:first-child]:pl-0">
+        <Stat value={cp.last} label={`Transit calls · ${cp.week?.slice(5)}`} detail={`${cp.delta > 0 ? "+" : ""}${cp.delta} on the week`} accent />
+        <Stat value={cp.baseline ?? 0} label="2024-25 weekly baseline" detail={cp.status && cp.status !== "normal" ? `flagged ${cp.status}` : "no flag this week"} />
+        <Stat value={cp.pct ?? 100} suffix="%" label="Of baseline" detail={cp.trend ?? "steady"} />
+      </div>
+    </section>
+
+    <section class="border-b border-line py-14">
+      <div class="grid gap-12 lg:grid-cols-12">
+        <div class="lg:col-span-6">
+          <Figure
+            title={`${cp.name}: ${cp.last} weekly transits`}
+            subtitle={`All vessel transit calls per week, last ${cp.weekly.length} weeks, to ${weekly.updated}.`}
+            source="Source: IMF PortWatch"
+          >
+            <StraitChart slug={slug!} client:visible />
+          </Figure>
+        </div>
+        <div class="lg:col-span-6">
+          <h2 class="t-serif mb-2 text-3xl">Live picture</h2>
+          <p class="mb-6 max-w-[52ch] text-sm text-ink-2">
+            {live
+              ? "Vessels broadcasting right now, accumulating as they arrive. Coverage depends on shore receivers and can run thin."
+              : "No live feed is configured for this chokepoint yet."}
+          </p>
+          {live && <LiveStraits only={slug} client:visible />}
+        </div>
+      </div>
+    </section>
+
+    <section class="border-b border-line py-14">
+      <h2 class="t-serif mb-2 text-3xl">Incidents in these waters</h2>
+      <p class="mb-8 max-w-[60ch] text-sm text-ink-2">
+        Curated events from public reporting (July 2024 onward), within the
+        strait's monitored box. The full record, including the NGA ASAM
+        archive, lives in the <a href="/incidents" class="link">incident database</a>.
+      </p>
+      {
+        nearby.length ? (
+          <ul class="grid gap-0">
+            {nearby.map((i) => (
+              <li class="grid gap-2 border-t border-line-2 py-4 md:grid-cols-12">
+                <span class="t-meta md:col-span-2">{dateFmt.format(new Date(i.date))}</span>
+                <span class="text-sm text-ink md:col-span-3">{i.vessel ?? "Unnamed vessel"}</span>
+                <span class="max-w-[64ch] text-sm leading-relaxed text-ink-2 md:col-span-7">
+                  {i.summary}{" "}
+                  <a href={i.source.url} class="link whitespace-nowrap" rel="noopener">
+                    {i.source.name}
+                  </a>
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p class="t-meta border-t border-line-2 pt-4">
+            No curated incident on record in this strait's box since July 2024.
+          </p>
+        )
+      }
+    </section>
+
+    <footer class="py-8">
+      <a href="/straits" class="link text-sm">All chokepoints</a>
+    </footer>
+  </div>
+
+  <SiteFooter />
+</Base>

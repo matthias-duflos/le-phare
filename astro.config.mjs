@@ -7,8 +7,9 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://astro.build/config
 export default defineConfig({
-  // [PLACEHOLDER] replace with the real domain before deployment
-  site: 'https://lephare.example',
+  // Cloudflare Pages project "le-phare"; override with SITE=https://… at build
+  // time once a custom domain is attached.
+  site: process.env.SITE ?? 'https://le-phare.pages.dev',
   devToolbar: { enabled: false },
   integrations: [react(), sitemap()],
 

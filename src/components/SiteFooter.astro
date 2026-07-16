@@ -1,5 +1,6 @@
 ---
 import Logo from "./Logo.astro";
+import { LINKEDIN_URL } from "../lib/identity";
 ---
 
 <footer class="overflow-hidden border-t border-line">
@@ -64,7 +65,7 @@ import Logo from "./Logo.astro";
     <div class="md:col-span-3">
       <ul class="grid gap-2 text-sm">
         <li><a href="/rss.xml" class="text-ink-2 transition-colors duration-150 hover:text-accent-text">RSS feed</a></li>
-        <li><a href="https://www.linkedin.com" rel="me noopener" class="text-ink-2 transition-colors duration-150 hover:text-accent-text">LinkedIn</a></li>
+        {LINKEDIN_URL && <li><a href={LINKEDIN_URL} rel="me noopener" class="text-ink-2 transition-colors duration-150 hover:text-accent-text">LinkedIn</a></li>}
         <li><a href="/sources" class="text-ink-2 transition-colors duration-150 hover:text-accent-text">Sources and licences</a></li>
       </ul>
     </div>

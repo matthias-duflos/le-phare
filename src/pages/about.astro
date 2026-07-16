@@ -3,9 +3,11 @@ import Base from "../layouts/Base.astro";
 import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import Logo from "../components/Logo.astro";
+import { LINKEDIN_URL, CONTACT_EMAIL } from "../lib/identity";
 
-// [PLACEHOLDER] — bio, LinkedIn URL and contact address below are explicitly
-// marked for Matthias to replace with his real details before deployment.
+// [PLACEHOLDER] — the bio below is explicitly marked for Matthias to replace
+// with his real details. LinkedIn and contact live in src/lib/identity.ts
+// and are omitted from the page while unset.
 ---
 
 <Base
@@ -38,8 +40,8 @@ import Logo from "../components/Logo.astro";
         </p>
       </div>
       <p class="mt-10 flex flex-wrap gap-5">
-        <a href="#" class="link text-sm"><mark class="bg-accent-wash text-ink">[LinkedIn URL]</mark></a>
-        <a href="#" class="link text-sm"><mark class="bg-accent-wash text-ink">[contact email]</mark></a>
+        {LINKEDIN_URL && <a href={LINKEDIN_URL} rel="me noopener" class="link text-sm">LinkedIn</a>}
+        {CONTACT_EMAIL && <a href={`mailto:${CONTACT_EMAIL}`} class="link text-sm">{CONTACT_EMAIL}</a>}
         <a href="/rss.xml" class="link text-sm">RSS</a>
       </p>
     </section>

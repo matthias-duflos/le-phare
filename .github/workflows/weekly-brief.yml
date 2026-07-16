@@ -20,11 +20,16 @@ jobs:
       - run: node scripts/fetch-portwatch.mjs
       - run: node scripts/fetch-navarea.mjs
       - run: node scripts/fetch-wire.mjs
+      # AIS integrity sampling session (skips cleanly if the secret is absent)
+      - run: npm install --no-save --no-audit --no-fund topojson-client d3-geo
+      - run: node scripts/fetch-anomalies.mjs
+        env:
+          AISSTREAM_KEY: ${{ secrets.AISSTREAM_KEY }}
       - run: node scripts/make-brief.mjs
       - name: commit & push
         run: |
           git config user.name "le-phare-bot"
-          git config user.email "bot@lephare.example"
+          git config user.email "le-phare-bot@users.noreply.github.com"
           git add -A
           git diff --cached --quiet || git commit -m "data: weekly refresh + auto brief"
           git push

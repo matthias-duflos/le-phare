@@ -5,38 +5,55 @@ import SiteFooter from "../components/SiteFooter.astro";
 import Stat from "../components/ui/Stat.astro";
 import Tag from "../components/ui/Tag.astro";
 import AnomalyChart from "../components/anomalies/AnomalyChart";
+import anomalies from "../data/anomalies.json";
 
-// Sample aggregates until the pipeline ships. Aggregated by zone ONLY:
+// Real aggregates from the weekly aisstream listening sessions
+// (scripts/fetch-anomalies.mjs). Aggregated by zone ONLY:
 // no vessel name, no MMSI, no IMO, ever — that guardrail is the module.
-const WEEKS = ["W22", "W23", "W24", "W25", "W26", "W27", "W28"];
-const ZONES = [
-  { name: "Strait of Hormuz", counts: [48, 55, 61, 52, 74, 83, 91] },
-  { name: "Black Sea", counts: [64, 58, 71, 66, 59, 62, 68] },
-  { name: "Gulf of Finland", counts: [12, 15, 14, 19, 24, 31, 38] },
-  { name: "Eastern Mediterranean", counts: [22, 26, 19, 24, 28, 25, 31] },
-  { name: "Southern Red Sea", counts: [18, 14, 21, 17, 23, 26, 29] },
-  { name: "Gulf of Guinea", counts: [9, 7, 11, 8, 12, 9, 13] },
-];
-const max = Math.max(...ZONES.flatMap((z) => z.counts));
-const totalW28 = ZONES.reduce((a, z) => a + z.counts[6], 0);
-const totalW27 = ZONES.reduce((a, z) => a + z.counts[5], 0);
+const HEURISTIC_META: Record<string, { name: string; tag: number; desc: string }> = {
+  "jamming-cluster": { name: "Jamming cluster", tag: 6, desc: "Many vessels in one area simultaneously reporting displaced or circular positions: the signature of area GPS interference, not of any single ship." },
+  "impossible-jump": { name: "Impossible jump", tag: 3, desc: "A position sequence implying a speed no hull can reach. Flags teleporting tracks caused by spoofed or corrupted broadcasts." },
+  "speed-anomaly": { name: "Speed anomaly", tag: 2, desc: "Reported speed over ground far outside a vessel class's envelope, sustained across several messages." },
+  "dark-gap": { name: "Dark gap", tag: 5, desc: "A prolonged silence from a transponder inside a sensitive zone, bounded by normal broadcasts before and after. Counted only above a duration threshold." },
+  "position-on-land": { name: "Position on land", tag: 4, desc: "Broadcast coordinates that place a vessel solidly inland. Almost always interference or spoofing; occasionally a misconfigured transponder." },
+};
+const HEURISTIC_IDS = Object.keys(HEURISTIC_META);
 
-const HEURISTICS = [
-  { name: "Jamming cluster", tag: 6, desc: "Many vessels in one area simultaneously reporting displaced or circular positions: the signature of area GPS interference, not of any single ship." },
-  { name: "Impossible jump", tag: 3, desc: "A position sequence implying a speed no hull can reach. Flags teleporting tracks caused by spoofed or corrupted broadcasts." },
-  { name: "Speed anomaly", tag: 2, desc: "Reported speed over ground far outside a vessel class's envelope, sustained across several messages." },
-  { name: "Dark gap", tag: 5, desc: "A prolonged silence from a transponder inside a sensitive zone, bounded by normal broadcasts before and after. Counted only above a duration threshold." },
-  { name: "Position on land", tag: 4, desc: "Broadcast coordinates that place a vessel inland. Almost always interference or spoofing; occasionally a misconfigured transponder." },
-];
+type Session = (typeof anomalies.sessions)[number];
+const sessions: Session[] = anomalies.sessions;
+const weeks = [...new Set(sessions.map((s) => s.week))];
+const weekLabels = weeks.map((w) => w.slice(5));
+const zoneIds = [...new Set(sessions.flatMap((s) => Object.keys(s.zones)))];
 
-// weekly totals by heuristic for the chart (sample)
-const chartRows = WEEKS.flatMap((week, i) => [
-  { week, heuristic: "Jamming cluster", count: [88, 92, 104, 96, 118, 129, 142][i] },
-  { week, heuristic: "Impossible jump", count: [31, 28, 36, 33, 41, 44, 49][i] },
-  { week, heuristic: "Speed anomaly", count: [18, 21, 17, 22, 19, 24, 26][i] },
-  { week, heuristic: "Dark gap", count: [24, 27, 22, 29, 31, 28, 34][i] },
-  { week, heuristic: "Position on land", count: [12, 7, 18, 6, 11, 11, 19][i] },
-]);
+const zoneTotal = (s: Session, id: string) => {
+  const z = (s.zones as any)[id];
+  return z ? (Object.values(z.counts) as number[]).reduce((a, b) => a + b, 0) : 0;
+};
+// zones × weeks matrix (sessions in the same ISO week are summed)
+const ZONES = zoneIds.map((id) => {
+  const name = (sessions.find((s) => (s.zones as any)[id])?.zones as any)[id].name as string;
+  const counts = weeks.map((w) => sessions.filter((s) => s.week === w).reduce((a, s) => a + zoneTotal(s, id), 0));
+  return { id, name, counts };
+});
+const max = Math.max(1, ...ZONES.flatMap((z) => z.counts));
+
+const last = weeks.length - 1;
+const lastWeek = weekLabels[last];
+const totalLast = ZONES.reduce((a, z) => a + z.counts[last], 0);
+const totalPrev = last > 0 ? ZONES.reduce((a, z) => a + z.counts[last - 1], 0) : null;
+const topZone = [...ZONES].sort((a, b) => b.counts[last] - a.counts[last])[0];
+const lastSessions = sessions.filter((s) => s.week === weeks[last]);
+const vesselsLast = lastSessions.reduce((a, s) => a + Object.values(s.zones as any).reduce((x: number, z: any) => x + z.vessels, 0), 0);
+const minutesLast = lastSessions.reduce((a, s) => a + s.minutes, 0);
+
+// weekly totals by heuristic for the chart
+const chartRows = weeks.flatMap((w, i) =>
+  HEURISTIC_IDS.map((h) => ({
+    week: weekLabels[i],
+    heuristic: HEURISTIC_META[h].name,
+    count: sessions.filter((s) => s.week === w).reduce((a, s) => a + (Object.values(s.zones as any) as any[]).reduce((x, z) => x + (z.counts[h] ?? 0), 0), 0),
+  })),
+);
 ---
 
 <Base
@@ -55,17 +72,23 @@ const chartRows = WEEKS.flatMap((week, i) => [
         week. Five heuristics over public AIS, aggregated by zone.
       </p>
       <p class="t-meta mt-4">
-        Aggregated by zone only · never a vessel name, MMSI or IMO · sample
-        aggregates pending the pipeline
+        Live aisstream.io sampling sessions, all six zones at once ·
+        aggregated by zone only, never a vessel name, MMSI or IMO ·
+        history accumulates weekly
       </p>
     </section>
 
     <!-- Weekly stats -->
     <section class="border-b border-line py-12">
       <div class="grid gap-8 sm:grid-cols-3 sm:divide-x sm:divide-[color:var(--line)] sm:[&>*]:px-8 sm:[&>*:first-child]:pl-0">
-        <Stat value={totalW28} label="Anomalies flagged · W28" detail={`${totalW28 - totalW27 >= 0 ? "+" : ""}${totalW28 - totalW27} vs W27`} accent />
-        <Stat value={91} label="Hormuz · W28" detail="highest zone this week" />
-        <Stat value={38} label="Gulf of Finland · W28" detail="tripled in seven weeks" />
+        <Stat
+          value={totalLast}
+          label={`Anomalies flagged · ${lastWeek}`}
+          detail={totalPrev != null ? `${totalLast - totalPrev >= 0 ? "+" : ""}${totalLast - totalPrev} vs ${weekLabels[last - 1]}` : `first session · ${minutesLast} min sampled`}
+          accent
+        />
+        <Stat value={topZone.counts[last]} label={`${topZone.name} · ${lastWeek}`} detail="highest zone this week" />
+        <Stat value={vesselsLast} label={`Vessels observed · ${lastWeek}`} detail={`across ${zoneIds.length} zones, ${minutesLast} min of listening`} />
       </div>
     </section>
 
@@ -75,13 +98,14 @@ const chartRows = WEEKS.flatMap((week, i) => [
       <p class="mb-8 max-w-[60ch] text-sm text-ink-2">
         Flagged anomalies per zone per week, all heuristics combined. The
         brighter the cell, the noisier the zone.
+        {weeks.length < 4 && " The watch is young: columns accumulate one per week."}
       </p>
       <div class="overflow-x-auto">
         <table class="w-full border-collapse text-sm" style="min-width:640px">
           <thead>
             <tr>
               <th class="t-caps pb-3 pr-4 text-left font-semibold">Zone</th>
-              {WEEKS.map((w) => <th class="t-meta pb-3 text-center">{w}</th>)}
+              {weekLabels.map((w) => <th class="t-meta pb-3 text-center">{w}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -105,7 +129,7 @@ const chartRows = WEEKS.flatMap((week, i) => [
           </tbody>
         </table>
       </div>
-      <p class="t-meta mt-3">Sample aggregates · Graphic: Le Phare</p>
+      <p class="t-meta mt-3">Live sampled AIS via aisstream.io · Graphic: Le Phare</p>
     </section>
 
     <!-- Weekly trend by heuristic -->
@@ -114,29 +138,45 @@ const chartRows = WEEKS.flatMap((week, i) => [
         <div class="lg:col-span-6">
           <h2 class="t-serif mb-2 text-3xl">What kind of noise</h2>
           <p class="mb-6 max-w-[52ch] text-sm text-ink-2">
-            Weekly totals by heuristic. Jamming clusters dominate and are
-            still climbing; everything else is the long tail of a degraded
-            signal environment.
+            Weekly totals by heuristic, from the same sampled sessions.
+            Interference clusters and displaced positions concentrate where
+            the shooting is; the rest is the long tail of a degraded signal
+            environment.
           </p>
           <AnomalyChart rows={chartRows} client:visible />
-          <p class="t-meta mt-3">Sample data · Graphic: Le Phare</p>
+          <p class="t-meta mt-3">Live sampled AIS · Graphic: Le Phare</p>
         </div>
         <div class="lg:col-span-6">
           <h2 class="t-serif mb-6 text-3xl">The five heuristics</h2>
           <dl class="grid gap-6">
             {
-              HEURISTICS.map((h) => (
+              HEURISTIC_IDS.map((h) => (
                 <div class="border-t border-line-2 pt-3">
                   <dt class="flex items-center gap-3">
-                    <Tag label={h.name} viz={h.tag as 2 | 3 | 4 | 5 | 6} />
+                    <Tag label={HEURISTIC_META[h].name} viz={HEURISTIC_META[h].tag as 2 | 3 | 4 | 5 | 6} />
                   </dt>
-                  <dd class="mt-2 max-w-[58ch] text-sm leading-relaxed text-ink-2">{h.desc}</dd>
+                  <dd class="mt-2 max-w-[58ch] text-sm leading-relaxed text-ink-2">{HEURISTIC_META[h].desc}</dd>
                 </div>
               ))
             }
           </dl>
         </div>
       </div>
+    </section>
+
+    <!-- Method note -->
+    <section class="border-b border-line py-12">
+      <h2 class="t-caps mb-4">How the watch samples</h2>
+      <p class="max-w-[62ch] text-sm leading-relaxed text-ink-2">
+        Each week the pipeline opens one live aisstream.io connection
+        covering all six zones and listens for a bounded session (~12
+        minutes), applying the five heuristics to the raw position stream in
+        memory. Only zone-level counts are kept. Sampling means the numbers
+        are a floor, not a census — comparable week to week because the
+        method never changes, and biased low everywhere shore-receiver
+        coverage is thin (Hormuz notably, where jamming also suppresses
+        reception).
+      </p>
     </section>
 
     <!-- Privacy stance -->

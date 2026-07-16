@@ -18,7 +18,7 @@ type Strait = {
   feed: "digitraffic" | "aisstream";
 };
 
-const STRAITS: Strait[] = [
+export const STRAITS: Strait[] = [
   { slug: "baltic", name: "Baltic (full)", center: [22.5, 59.2], zoom: 5.0, feed: "digitraffic" },
   { slug: "bab-el-mandeb", name: "Bab el-Mandeb", center: [43.3, 12.6], zoom: 7.2, bbox: [[11.7, 42.4], [13.6, 44.1]], feed: "aisstream" },
   { slug: "suez", name: "Suez", center: [32.45, 30.2], zoom: 6.8, bbox: [[29.0, 32.0], [31.7, 33.1]], feed: "aisstream" },
@@ -36,10 +36,11 @@ const STRAITS: Strait[] = [
 
 const PRUNE_MS = 12 * 60000; // drop vessels silent for 12 min
 
-export default function LiveStraits() {
+export default function LiveStraits({ only }: { only?: string }) {
+  const initial = STRAITS.find((s) => s.slug === only) ?? STRAITS[0];
   const mapDiv = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
-  const [strait, setStrait] = useState<Strait>(STRAITS[0]);
+  const [strait, setStrait] = useState<Strait>(initial);
   const [stats, setStats] = useState<{ total: number; moving: number; at: string } | null>(null);
   const [state, setState] = useState<"connecting" | "live" | "nokey" | "error">("connecting");
 
@@ -49,8 +50,8 @@ export default function LiveStraits() {
     const map = new maplibregl.Map({
       container: mapDiv.current,
       style: "/map/abyss.json",
-      center: STRAITS[0].center,
-      zoom: STRAITS[0].zoom,
+      center: initial.center,
+      zoom: initial.zoom,
       attributionControl: { compact: true },
       cooperativeGestures: true,
     });
@@ -79,7 +80,7 @@ export default function LiveStraits() {
       map.on("mouseenter", "ais-dots", () => (map.getCanvas().style.cursor = "pointer"));
       map.on("mouseleave", "ais-dots", () => (map.getCanvas().style.cursor = ""));
       mapRef.current = map;
-      setStrait({ ...STRAITS[0] }); // trigger feed effect after source exists
+      setStrait({ ...initial }); // trigger feed effect after source exists
     });
     return () => map.remove();
   }, []);
@@ -185,7 +186,7 @@ export default function LiveStraits() {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className={only ? "hidden" : "mb-4 flex flex-wrap gap-2"}>
         {STRAITS.map((s) => (
           <button
             key={s.slug}

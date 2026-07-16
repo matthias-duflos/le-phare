@@ -62,7 +62,7 @@ const dateFmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long"
           <p class="t-caps mb-3">Cite this issue</p>
           <p class="t-meta select-all leading-relaxed" id="cite-text">
             Le Phare, "{brief.data.title}", Weekly Maritime Risk Brief no.{" "}
-            {brief.data.issue}, {dateFmt.format(brief.data.date)}. lephare.example
+            {brief.data.issue}, {dateFmt.format(brief.data.date)}. {(Astro.site ?? Astro.url).hostname}
           </p>
         </div>
       </aside>

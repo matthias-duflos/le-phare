@@ -36,7 +36,8 @@ const typeVar = (t: string) => `var(--viz-${TYPE_ORDER.indexOf(t) + 1})`;
 
 const YEARS = [
   { id: "2026", label: "2026", note: "curated · public reporting" },
-  { id: "2024", label: "2024", note: "NGA ASAM" },
+  { id: "2025", label: "2025", note: "curated · public reporting" },
+  { id: "2024", label: "2024", note: "ASAM to June · curated after" },
   { id: "2023", label: "2023", note: "NGA ASAM" },
   { id: "2022", label: "2022", note: "NGA ASAM" },
   { id: "all", label: "All", note: "2022 → 2026" },

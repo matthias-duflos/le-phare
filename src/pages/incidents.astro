@@ -10,9 +10,9 @@ import incidents from "../data/incidents.json";
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "Dataset",
-  name: "Le Phare Maritime Incident Database (sample)",
+  name: "Le Phare Maritime Incident Database",
   description:
-    "Geocoded and typed maritime security incidents aggregated from public reporting. Sample data demonstrating the format.",
+    "Geocoded and typed maritime security incidents: NGA ASAM archive (2022 to June 2024) plus 2026 incidents curated from public reporting, source linked on every event.",
   creator: { "@type": "Organization", name: "Le Phare" },
   license: "https://creativecommons.org/licenses/by/4.0/",
 };
@@ -34,12 +34,14 @@ const jsonLd = {
         Geocoded and typed hostile acts against ships, with vessel details
         where publicly reported. Two datasets: the real NGA ASAM archive of
         677 events (2022 to June 2024, public domain, including vessel names
-        and flags), and 2026 incidents curated from public reporting of the
-        Hormuz crisis, source linked on every event.
+        and flags), and incidents from July 2024 onward curated from public
+        reporting — the Red Sea campaign, the Somali piracy resurgence, the
+        Hormuz crisis — source linked on every event.
       </p>
       <p class="t-meta mt-4">
         The ASAM programme was defunded on 30 June 2024, which is why the
-        archive stops there · 2026 curation grows weekly with the brief
+        archive stops there · curation carries the record forward and grows
+        weekly with the brief
       </p>
     </section>
 

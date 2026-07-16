@@ -12,12 +12,26 @@ import ThreeGlobe from "../components/hero/ThreeGlobe";
 import Sparkline from "../components/ui/Sparkline.astro";
 import Tag from "../components/ui/Tag.astro";
 import weekly from "../data/transits-weekly.json";
+import incidents from "../data/incidents.json";
+import anomalies from "../data/anomalies.json";
 
 const stats = {
   bab: (weekly.chokepoints as any)["bab-el-mandeb"],
   cape: (weekly.chokepoints as any)["good-hope"],
   suez: (weekly.chokepoints as any)["suez"],
 };
+
+// module-card figures, from the real data
+const year = new Date().getFullYear();
+const incidentsByMonth = Array.from({ length: new Date().getMonth() + 1 }, (_, m) =>
+  incidents.filter((i) => i.date.startsWith(`${year}-${String(m + 1).padStart(2, "0")}`)).length,
+);
+const lastSession = anomalies.sessions.at(-1)!;
+const anomalyZones = Object.values(lastSession.zones as Record<string, any>).map((z) => ({
+  name: z.name as string,
+  n: (Object.values(z.counts) as number[]).reduce((a, b) => a + b, 0),
+}));
+const anomalyMax = Math.max(1, ...anomalyZones.map((z) => z.n));
 
 const briefs = (await getCollection("briefs")).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
@@ -181,19 +195,19 @@ const modules = [
 
               {m.title === "Incident database" && (
                 <span class="relative my-5 block">
-                  <Sparkline points={[9, 12, 11, 16, 19, 17, 23, 27, 25, 31, 34, 41]} width={300} height={44} />
-                  <span class="t-meta mt-1 block">incidents per month · trailing year · sample</span>
+                  <Sparkline points={incidentsByMonth} width={300} height={44} />
+                  <span class="t-meta mt-1 block">curated incidents per month · {year}</span>
                 </span>
               )}
               {m.title === "Strait monitor" && (
                 <span class="relative my-5 grid gap-2">
                   {[
-                    { n: "Bab el-Mandeb", p: [70, 64, 55, 41, 33, 28] },
-                    { n: "Suez", p: [78, 66, 58, 49, 44, 41] },
-                    { n: "Good Hope", p: [38, 52, 61, 66, 71, 74] },
+                    { n: "Bab el-Mandeb", id: "bab-el-mandeb" },
+                    { n: "Suez", id: "suez" },
+                    { n: "Good Hope", id: "good-hope" },
                   ].map((s) => (
                     <span class="flex items-center gap-3">
-                      <Sparkline points={s.p} width={90} height={20} stroke="var(--viz-context)" />
+                      <Sparkline points={(weekly.chokepoints as any)[s.id].weekly.map((w: any) => w.t)} width={90} height={20} stroke="var(--viz-context)" />
                       <span class="t-meta">{s.n}</span>
                     </span>
                   ))}
@@ -201,10 +215,10 @@ const modules = [
               )}
               {m.title === "AIS integrity watch" && (
                 <span class="relative my-5 flex items-center gap-1.5">
-                  {[0.14, 0.22, 0.38, 0.30, 0.55, 0.75, 1].map((o) => (
-                    <span class="inline-block size-[14px]" style={`background:var(--accent);opacity:${o * 0.85}`} />
+                  {anomalyZones.map((z) => (
+                    <span class="inline-block size-[14px]" style={`background:var(--accent);opacity:${Math.max(0.08, (z.n / anomalyMax) * 0.85)}`} title={z.name} />
                   ))}
-                  <span class="t-meta ml-2">jamming intensity · 7 weeks · sample</span>
+                  <span class="t-meta ml-2">anomalies by zone · {lastSession.week.slice(5)}</span>
                 </span>
               )}
               {m.title === "Maritime risk lexicon" && (

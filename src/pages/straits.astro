@@ -27,8 +27,8 @@ const rerouting = weekly.rerouting.at(-1);
         Strait Transit Monitor
       </h1>
       <p class="mt-6 max-w-[56ch] text-lg leading-relaxed text-ink-2">
-        Eleven chokepoints, watched weekly. Transit analytics ship with the
-        AIS parquet pipeline; meanwhile, the Baltic approaches below are live.
+        Twelve chokepoints, watched weekly against their 2024-25 baseline,
+        with a live AIS picture of each. Every strait has its own page.
       </p>
     </section>
 
@@ -54,9 +54,9 @@ const rerouting = weekly.rerouting.at(-1);
       <div class="grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
         {
           chokepoints.map((c) => (
-            <div id={c.slug} class="scroll-mt-28 border-t border-line-2 pt-4 target:bg-accent-wash">
+            <a href={`/straits/${c.slug}`} id={c.slug} class="group block scroll-mt-28 border-t border-line-2 pt-4 transition-colors duration-150 target:bg-accent-wash">
               <p class="flex items-baseline justify-between gap-3">
-                <span class="t-serif text-xl">{c.name}</span>
+                <span class="t-serif text-xl transition-colors duration-150 group-hover:text-accent-text">{c.name}</span>
                 {(weekly.chokepoints as any)[c.slug].status !== "normal" && (
                   <span class={`t-caps ${(weekly.chokepoints as any)[c.slug].status === "critical" ? "!text-risk-text" : "!text-accent-text"}`}>
                     {(weekly.chokepoints as any)[c.slug].status} · {(weekly.chokepoints as any)[c.slug].pct}% of baseline
@@ -69,8 +69,9 @@ const rerouting = weekly.rerouting.at(-1);
                 <span class={c.delta > 0 ? "!text-[color:var(--viz-2)]" : c.delta < 0 ? "!text-risk-text" : ""}>
                   {" "}{c.delta > 0 ? `+${c.delta}` : c.delta === 0 ? "±0" : c.delta}
                 </span>
+                <span class="t-meta ml-2 opacity-0 transition-opacity duration-150 group-hover:opacity-100">state of the strait →</span>
               </p>
-            </div>
+            </a>
           ))
         }
       </div>

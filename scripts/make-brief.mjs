@@ -1,7 +1,8 @@
 // Auto-generates the weekly maritime risk brief from live data:
 // PortWatch weekly aggregates (+ computed alerts), active NAVAREA warnings,
-// and the GDELT wire. Writes src/content/briefs/<year>-w<week>.md.
-// Idempotent: refuses to overwrite an existing issue.
+// and the GDELT wire. Writes src/content/briefs/<publication date>.md
+// (date-based slugs keep /brief/ URLs in chronological order).
+// Idempotent: refuses to write twice for the same data week or the same day.
 // Run after fetch-portwatch & fetch-navarea:  node scripts/make-brief.mjs
 
 import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
@@ -11,14 +12,18 @@ const navarea = JSON.parse(readFileSync(new URL("../public/data/navarea.json", i
 
 const cps = Object.values(weekly.chokepoints);
 const week = cps[0].week; // e.g. 2026-W27
-const slugFile = `${week.toLowerCase()}.md`;
+const today = new Date().toISOString().slice(0, 10);
+const slugFile = `${today}.md`;
 const dest = new URL(`../src/content/briefs/${slugFile}`, import.meta.url);
-if (existsSync(dest)) {
-  console.log(`brief ${slugFile} already exists, nothing to do`);
+
+const briefsDir = new URL("../src/content/briefs/", import.meta.url);
+const issues = readdirSync(briefsDir).filter((f) => f.endsWith(".md"));
+const alreadyCovered = issues.some((f) => readFileSync(new URL(f, briefsDir), "utf8").includes(`data week ${week}`));
+if (alreadyCovered || existsSync(dest)) {
+  console.log(`brief for ${alreadyCovered ? `data week ${week}` : today} already exists, nothing to do`);
   process.exit(0);
 }
 
-const issues = readdirSync(new URL("../src/content/briefs/", import.meta.url)).filter((f) => f.endsWith(".md"));
 const issueNo = issues.length + 1;
 
 const alerts = cps.filter((c) => c.status && c.status !== "normal");
@@ -61,7 +66,6 @@ const dek = critical
   ? `${critical.last} weekly transit calls against a ~${critical.baseline} baseline${critical.trend === "recovering" ? ", but the reopening is gathering pace" : ""}; the Cape still carries ${rer?.idx}× Suez's traffic.`
   : `Rerouting index at ${rer?.idx}; ${bab.last} weekly transit calls through Bab el-Mandeb.`;
 
-const today = new Date().toISOString().slice(0, 10);
 const alertLines = alerts.length
   ? alerts.map((a) => `${a.name} is flagged **${a.status}** at ${pct(a)} (${a.last} against ~${a.baseline} weekly calls${a.trend ? `, ${a.trend}` : ""}).`).join(" ")
   : "No chokepoint is flagged against its 2024-25 baseline this week.";
@@ -97,7 +101,7 @@ issue: ${issueNo}
 title: "${title.replace(/"/g, "'")}"
 dek: "${dek.replace(/"/g, "'")}"
 date: ${today}
-period: "week ${week.slice(5)} · data to ${weekly.updated}"
+period: "data week ${week} · to ${weekly.updated}"
 chart: transits
 tags: ["auto-generated", "chokepoints", "war-risk"]
 ---
