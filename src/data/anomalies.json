@@ -19,38 +19,38 @@
     },
     "black-sea": {
      "name": "Black Sea",
-     "messages": 131,
-     "vessels": 54,
+     "messages": 186,
+     "vessels": 58,
      "counts": {
       "jamming-cluster": 0,
       "impossible-jump": 0,
       "speed-anomaly": 0,
-      "dark-gap": 2,
-      "position-on-land": 2
+      "dark-gap": 1,
+      "position-on-land": 3
      }
     },
     "gulf-of-finland": {
      "name": "Gulf of Finland",
-     "messages": 393,
+     "messages": 404,
      "vessels": 156,
      "counts": {
       "jamming-cluster": 0,
       "impossible-jump": 0,
       "speed-anomaly": 0,
-      "dark-gap": 0,
-      "position-on-land": 7
+      "dark-gap": 2,
+      "position-on-land": 5
      }
     },
     "east-med": {
      "name": "Eastern Mediterranean",
-     "messages": 466,
-     "vessels": 196,
+     "messages": 521,
+     "vessels": 219,
      "counts": {
       "jamming-cluster": 1,
       "impossible-jump": 0,
       "speed-anomaly": 0,
-      "dark-gap": 4,
-      "position-on-land": 9
+      "dark-gap": 6,
+      "position-on-land": 16
      }
     },
     "southern-red-sea": {
@@ -67,12 +67,12 @@
     },
     "gulf-of-guinea": {
      "name": "Gulf of Guinea",
-     "messages": 34,
+     "messages": 35,
      "vessels": 12,
      "counts": {
       "jamming-cluster": 0,
       "impossible-jump": 0,
-      "speed-anomaly": 1,
+      "speed-anomaly": 0,
       "dark-gap": 0,
       "position-on-land": 0
      }
@@ -80,5 +80,5 @@
    }
   }
  ],
- "updated": "2026-07-16T13:18:41.072Z"
+ "updated": "2026-07-16T14:31:01.833Z"
 }
