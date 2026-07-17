@@ -21,6 +21,10 @@ jobs:
       - run: node scripts/fetch-incidents-live.mjs
       - run: node scripts/fetch-navarea.mjs
       - run: node scripts/fetch-wire.mjs
+      # 2-min listening session -> ghost picture that fills the live maps instantly
+      - run: node scripts/fetch-ais-seed.mjs 120
+        env:
+          AISSTREAM_KEY: ${{ secrets.AISSTREAM_KEY }}
       - name: commit & push if changed
         run: |
           git config user.name "le-phare-bot"

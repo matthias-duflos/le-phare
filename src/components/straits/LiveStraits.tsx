@@ -83,6 +83,7 @@ export default function LiveStraits({ only }: { only?: string }) {
   const world = useRef<Map<number, Vessel>>(new Map());
   const baltic = useRef<Map<number, Vessel>>(new Map());
   const heardSince = useRef<number>(Date.now());
+  const [seed, setSeed] = useState<{ at: string; vessels: [number, number, number][] } | null>(null);
 
   const state = strait.feed === "digitraffic" ? balticState : wsState;
 
@@ -99,6 +100,20 @@ export default function LiveStraits({ only }: { only?: string }) {
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     map.on("load", () => {
+      // ghost picture: the server-side seed (earlier today) paints instantly,
+      // dimmed, under the live dots — the map is never empty on arrival
+      map.addSource("seed", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      map.addLayer({
+        id: "seed-dots",
+        type: "circle",
+        source: "seed",
+        paint: {
+          "circle-radius": 2,
+          "circle-color": "#5E7C93",
+          "circle-opacity": 0.35,
+          "circle-opacity-transition": { duration: 900 } as any,
+        },
+      });
       map.addSource("ais", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
       map.addLayer({
         id: "ais-dots",
@@ -108,6 +123,19 @@ export default function LiveStraits({ only }: { only?: string }) {
           "circle-radius": ["case", ["==", ["get", "moving"], 1], 3, 2],
           "circle-color": ["case", ["==", ["get", "moving"], 1], "#F2B950", "#5E7C93"],
           "circle-opacity": 0.85,
+        },
+      });
+      // freshly-heard vessels flash in with a soft halo for a few seconds
+      map.addLayer({
+        id: "ais-fresh",
+        type: "circle",
+        source: "ais",
+        filter: ["==", ["get", "fresh"], 1],
+        paint: {
+          "circle-radius": 9,
+          "circle-color": "#F2B950",
+          "circle-opacity": 0.22,
+          "circle-blur": 0.6,
         },
       });
       map.on("click", "ais-dots", (e) => {
@@ -138,6 +166,12 @@ export default function LiveStraits({ only }: { only?: string }) {
         if (world.current.size) heardSince.current = Math.min(...[...world.current.values()].map((v) => v.t));
       }
     } catch {}
+
+    // ghost picture from the last server-side listening session
+    fetch("/data/ais-seed.json")
+      .then((r) => r.json())
+      .then((d) => setSeed({ at: d.fetched, vessels: d.vessels ?? [] }))
+      .catch(() => {});
 
     const subs = (only ? STRAITS.filter((s) => s.slug === only) : STRAITS).filter(
       (s) => s.feed === "aisstream" && s.bbox,
@@ -250,6 +284,23 @@ export default function LiveStraits({ only }: { only?: string }) {
     };
   }, [strait.feed]);
 
+  /* ---------- ghost layer data ---------- */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !seed) return;
+    const geo = {
+      type: "FeatureCollection" as const,
+      features: seed.vessels.map(([lon, lat]) => ({
+        type: "Feature" as const,
+        properties: {},
+        geometry: { type: "Point" as const, coordinates: [lon, lat] },
+      })),
+    };
+    const apply = () => (map.getSource("seed") as maplibregl.GeoJSONSource | undefined)?.setData(geo as any);
+    if (map.isStyleLoaded()) apply();
+    else map.once("load", apply);
+  }, [seed, strait]);
+
   /* ---------- render loop: publish the selected strait every 2 s ---------- */
   useEffect(() => {
     const map = mapRef.current;
@@ -268,13 +319,22 @@ export default function LiveStraits({ only }: { only?: string }) {
         )
         .map(([mmsi, v]) => ({
           type: "Feature" as const,
-          properties: { mmsi, sog: v.sog, moving: v.sog > 0.5 ? 1 : 0 },
+          properties: { mmsi, sog: v.sog, moving: v.sog > 0.5 ? 1 : 0, fresh: now - v.t < 8000 ? 1 : 0 },
           geometry: { type: "Point" as const, coordinates: [v.lon, v.lat] },
         }));
       (map.getSource("ais") as maplibregl.GeoJSONSource | undefined)?.setData({
         type: "FeatureCollection",
         features: feats,
       });
+      // the ghost picture yields as the live one fills toward its target
+      if (map.getLayer("seed-dots")) {
+        const goal = GOOD[strait.slug] ?? 20;
+        map.setPaintProperty(
+          "seed-dots",
+          "circle-opacity",
+          strait.feed === "digitraffic" ? 0 : Math.max(0, 0.35 * (1 - feats.length / goal)),
+        );
+      }
       setStats({
         total: feats.length,
         moving: feats.filter((f) => f.properties.moving).length,
@@ -318,13 +378,27 @@ export default function LiveStraits({ only }: { only?: string }) {
                 ? "connecting to live feed…"
                 : DARK.has(strait.slug)
                   ? "listening… these waters run dark: few or no volunteer shore receivers (war zone / jamming) — see 'why some straits run dark' below"
-                  : "listening… every strait accumulates in the background from page load"}
+                  : seed
+                    ? `listening… ghost dots show traffic heard earlier (${seed.at.slice(11, 16)} UTC) · live broadcasts take over as they arrive`
+                    : "listening… every strait accumulates in the background from page load"}
         </p>
         <p className="t-meta">
           <span className="mr-3"><span className="mr-1.5 inline-block size-[7px] align-middle" style={{ background: "var(--accent)" }} />underway</span>
-          <span><span className="mr-1.5 inline-block size-[7px] align-middle" style={{ background: "#5E7C93" }} />moored / anchored</span>
+          <span className="mr-3"><span className="mr-1.5 inline-block size-[7px] align-middle" style={{ background: "#5E7C93" }} />moored / anchored</span>
+          <span><span className="mr-1.5 inline-block size-[5px] rounded-full align-middle opacity-40" style={{ background: "#5E7C93" }} />ghost (earlier)</span>
         </p>
       </div>
+      {strait.feed === "aisstream" && !DARK.has(strait.slug) && (
+        <div className="mb-3 h-[2px] w-full bg-[color:var(--line)]" aria-hidden="true">
+          <div
+            className="h-full bg-[color:var(--accent)] transition-[width,opacity] duration-700 [transition-timing-function:var(--ease-out)]"
+            style={{
+              width: `${Math.min(100, ((stats?.total ?? 0) / (GOOD[strait.slug] ?? 20)) * 100)}%`,
+              opacity: (stats?.total ?? 0) >= (GOOD[strait.slug] ?? 20) ? 0.35 : 1,
+            }}
+          />
+        </div>
+      )}
       <div
         ref={mapDiv}
         className="h-[500px] w-full border border-line-2 [&_.maplibregl-popup-content]:!bg-transparent [&_.maplibregl-popup-content]:!p-0 [&_.maplibregl-popup-content]:!shadow-none [&_.maplibregl-popup-tip]:!border-t-[color:var(--bg-1)] [&_.maplibregl-ctrl-attrib]:!bg-bg-1 [&_.maplibregl-ctrl-attrib]:!text-ink-3 [&_.maplibregl-ctrl-attrib]:!text-[10px] [&_.maplibregl-popup-close-button]:!text-ink-2"
@@ -332,8 +406,10 @@ export default function LiveStraits({ only }: { only?: string }) {
       <p className="t-meta mt-3">
         Live AIS: Fintraffic Digitraffic (Baltic, CC BY 4.0) · aisstream.io — one
         stream over all twelve straits, listening from the moment the page
-        opens, last picture cached locally · coverage relies on volunteer shore
-        receivers and can run thin (Hormuz notably, where jamming also
+        opens, last picture cached locally · faint ghost dots are the traffic
+        heard in the last server session (refreshed every 6 h) and fade out as
+        the live picture reaches its target · coverage relies on volunteer
+        shore receivers and can run thin (Hormuz notably, where jamming also
         suppresses AIS) · vessels fade after 12 min of silence
       </p>
     </div>
