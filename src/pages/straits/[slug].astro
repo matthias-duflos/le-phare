@@ -6,7 +6,7 @@ import SiteHeader from "../../components/SiteHeader.astro";
 import SiteFooter from "../../components/SiteFooter.astro";
 import Stat from "../../components/ui/Stat.astro";
 import Figure from "../../components/ui/Figure.astro";
-import LiveStraits, { STRAITS } from "../../components/straits/LiveStraits";
+import LiveStraits, { STRAITS, DARK } from "../../components/straits/LiveStraits";
 import StraitChart from "../../components/straits/StraitChart";
 import weekly from "../../data/transits-weekly.json";
 import incidents from "../../data/incidents.json";
@@ -77,9 +77,13 @@ const statusLine =
         <div class="lg:col-span-6">
           <h2 class="t-serif mb-2 text-3xl">Live picture</h2>
           <p class="mb-6 max-w-[52ch] text-sm text-ink-2">
-            {live
-              ? "Vessels broadcasting right now, accumulating as they arrive. Coverage depends on shore receivers and can run thin."
-              : "No live feed is configured for this chokepoint yet."}
+            {live && DARK.has(slug!)
+              ? "These waters run dark on open AIS: shore receivers are scarce or silenced here (war zone, jamming, ships switching off), and the satellite view that fills this gap is what underwriters pay for. The weekly series above still counts every transit — and the absence itself feeds the "
+              : live
+                ? "Vessels broadcasting right now, accumulating from the moment any page of this site opens. Coverage depends on shore receivers and can run thin."
+                : "No live feed is configured for this chokepoint yet."}
+            {live && DARK.has(slug!) && <a href="/anomalies" class="link">AIS integrity watch</a>}
+            {live && DARK.has(slug!) && "."}
           </p>
           {live && <LiveStraits only={slug} client:visible />}
         </div>

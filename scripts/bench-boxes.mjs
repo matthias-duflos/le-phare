@@ -11,6 +11,6 @@ export const STRAITS_BOXES = [
   { slug: "malacca", bbox: [[0.9, 102.3], [1.7, 104.4]] },
   { slug: "panama", bbox: [[8.5, -80.2], [9.7, -79.1]] },
   { slug: "good-hope", bbox: [[-35.6, 17.3], [-33.5, 19.4]] },
-  { slug: "taiwan-strait", bbox: [[22.8, 117.3], [25.7, 121.2]] },
+  { slug: "taiwan-strait", bbox: [[21.8, 116.5], [26.5, 122.2]] },
   { slug: "kerch", bbox: [[44.7, 35.9], [45.7, 37.0]] },
 ];

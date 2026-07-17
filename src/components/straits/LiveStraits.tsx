@@ -40,7 +40,7 @@ export const STRAITS: Strait[] = [
   { slug: "malacca", name: "Malacca / Singapore", center: [103.5, 1.3], zoom: 7.8, bbox: [[0.9, 102.3], [1.7, 104.4]], feed: "aisstream" },
   { slug: "panama", name: "Panama", center: [-79.6, 9.1], zoom: 8.0, bbox: [[8.5, -80.2], [9.7, -79.1]], feed: "aisstream" },
   { slug: "good-hope", name: "Good Hope", center: [18.4, -34.5], zoom: 7.2, bbox: [[-35.6, 17.3], [-33.5, 19.4]], feed: "aisstream" },
-  { slug: "taiwan-strait", name: "Taiwan Strait", center: [119.8, 24.3], zoom: 6.2, bbox: [[22.8, 117.3], [25.7, 121.2]], feed: "aisstream" },
+  { slug: "taiwan-strait", name: "Taiwan Strait", center: [119.4, 24.2], zoom: 5.8, bbox: [[21.8, 116.5], [26.5, 122.2]], feed: "aisstream" },
   { slug: "kerch", name: "Kerch", center: [36.5, 45.2], zoom: 8.2, bbox: [[44.7, 35.9], [45.7, 37.0]], feed: "aisstream" },
 ];
 
@@ -59,14 +59,16 @@ const GOOD: Record<string, number> = {
   malacca: 40,
   suez: 25,
   bosphorus: 15,
-  "taiwan-strait": 5,
+  "taiwan-strait": 60, // widened frame reaches the coastal receivers: 104 in 5 min benchmarked
   panama: 3,
   "bab-el-mandeb": 2,
   hormuz: 2,
   kerch: 2,
 };
-// straits where shore-receiver coverage is structurally thin or nil
-const THIN = new Set(["bab-el-mandeb", "hormuz", "kerch", "panama", "taiwan-strait"]);
+// straits where shore-receiver coverage is structurally thin or nil —
+// benchmarked at ~zero even with widened frames (war zones, jamming, no
+// volunteer receivers). The site says so openly; see the straits page.
+export const DARK = new Set(["bab-el-mandeb", "hormuz", "kerch", "panama"]);
 
 export default function LiveStraits({ only }: { only?: string }) {
   const initial = STRAITS.find((s) => s.slug === only) ?? STRAITS[0];
@@ -314,8 +316,8 @@ export default function LiveStraits({ only }: { only?: string }) {
                 } · updated ${stats.at}`
               : state === "connecting"
                 ? "connecting to live feed…"
-                : THIN.has(strait.slug)
-                  ? "listening… coverage is structurally thin here: few or no volunteer shore receivers (war zone / jamming), not a bug"
+                : DARK.has(strait.slug)
+                  ? "listening… these waters run dark: few or no volunteer shore receivers (war zone / jamming) — see 'why some straits run dark' below"
                   : "listening… every strait accumulates in the background from page load"}
         </p>
         <p className="t-meta">
