@@ -46,10 +46,10 @@
   --viz-grid: rgba(232, 237, 242, 0.07);
   --viz-axis: #71869B;
 
-  /* Type */
-  --font-serif: "Newsreader Variable", Georgia, "Times New Roman", serif;
-  --font-sans: "Inter Variable", system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", monospace;
+  /* Type — Spectral (editorial serif), Archivo (signage grotesque), IBM Plex Mono (instrument log) */
+  --font-serif: "Spectral", Georgia, "Times New Roman", serif;
+  --font-sans: "Archivo Variable", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
 
   /* Motion */
   --dur-1: 150ms;
@@ -158,27 +158,25 @@ body {
 .t-display {
   font-family: var(--font-serif);
   font-weight: 500;
-  font-variation-settings: "opsz" 72;
-  line-height: 1.02;
-  letter-spacing: -0.015em;
+  line-height: 1.04;
+  letter-spacing: -0.02em;
   text-wrap: balance;
 }
 
 .t-serif {
   font-family: var(--font-serif);
-  font-variation-settings: "opsz" 32;
   font-weight: 500;
   line-height: 1.15;
-  letter-spacing: -0.008em;
+  letter-spacing: -0.01em;
   text-wrap: balance;
 }
 
 .t-editorial {
   /* long-form body, /brief pages */
   font-family: var(--font-serif);
-  font-variation-settings: "opsz" 16;
+  font-weight: 400;
   font-size: 1.125rem;
-  line-height: 1.65;
+  line-height: 1.68;
   color: var(--ink);
 }
 
@@ -272,16 +270,20 @@ body {
 
 .map-marker-label {
   position: absolute;
-  left: 14px;
+  left: 16px;
   top: 50%;
   transform: translateY(-50%);
   font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.14em;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.13em;
   text-transform: uppercase;
   white-space: nowrap;
-  color: #a9b8c6;
-  text-shadow: 0 0 6px rgba(4, 10, 16, 0.9), 0 0 2px rgba(4, 10, 16, 0.9);
+  color: #e8edf2;
+  text-shadow:
+    0 0 10px rgba(4, 10, 16, 0.95),
+    0 0 4px rgba(4, 10, 16, 0.95),
+    0 1px 2px rgba(4, 10, 16, 0.9);
 }
 @media (max-width: 767px) {
   .map-marker-label {

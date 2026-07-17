@@ -25,16 +25,37 @@ const AUTO_SPEED = 0.0011; // rad/frame-ish, one revolution ≈ 95 s
 const DAMPING = 0.93;
 const START_LON = 40;
 
-// trade arcs between chokepoints: amber pulses travel these
-const ARCS: Array<[string, string]> = [
-  ["gibraltar", "suez"],
-  ["suez", "bab-el-mandeb"],
-  ["bab-el-mandeb", "hormuz"],
-  ["bab-el-mandeb", "malacca"],
-  ["malacca", "taiwan-strait"],
-  ["dover", "danish-straits"],
-  ["panama", "gibraltar"],
-  ["good-hope", "malacca"],
+// Real trade lanes, drawn on the surface as sequences of [lat, lon] waypoints
+// (ports, straits and sea marks). Segments are great-circle interpolated so
+// the lines hug the ocean; amber pulses travel each lane.
+const PORTS: Array<[number, number]> = [
+  [51.95, 3.9],    // Rotterdam
+  [30.8, 122.7],   // Shanghai
+  [1.25, 103.9],   // Singapore
+  [33.6, -118.4],  // Los Angeles / Long Beach
+  [40.4, -73.6],   // New York
+  [59.6, 24.5],    // Gulf of Finland
+  [45.8, 31.0],    // Odesa approaches
+];
+const ROUTES: Array<Array<[number, number]>> = [
+  // Asia – Europe mainline via Suez
+  [[30.8, 122.7], [24.5, 119.5], [7, 109], [1.25, 103.9], [3, 100.5], [6, 96.5], [5.6, 80.4], [12.3, 54.2], [12.5, 47], [12.6, 43.4], [18, 39.5], [23, 37], [30, 32.5], [34.2, 24], [37.2, 11.3], [35.9, -5.6], [36.8, -9.4], [43.6, -9.7], [48.6, -5.4], [51.05, 1.5], [51.95, 3.9]],
+  // Cape of Good Hope diversion (Suez avoidance)
+  [[1.25, 103.9], [-6, 92], [-16, 70], [-27, 48], [-32, 30.5], [-34.9, 18.4], [-22, 8], [-8, 2], [5, -8], [14.8, -18.2], [28.3, -14.2], [36.8, -9.4], [43.6, -9.7], [48.6, -5.4], [51.05, 1.5]],
+  // Gulf crude, westbound: Hormuz → Bab el-Mandeb
+  [[26.5, 56.5], [24.5, 59.5], [14.5, 55.5], [12.7, 46.5], [12.6, 43.4]],
+  // Gulf crude, eastbound VLCC route: Hormuz → Malacca
+  [[26.5, 56.5], [22, 61], [8, 73], [5.6, 80.4], [6, 96.5], [3, 100.5], [1.25, 103.9]],
+  // Transpacific: Shanghai → Los Angeles (great circle by the Aleutians)
+  [[30.8, 122.7], [34.5, 141], [42, 155], [49, 180], [50, -160], [40, -130], [33.6, -118.4]],
+  // Transatlantic: Channel → New York
+  [[51.05, 1.5], [49.5, -6], [48, -20], [42, -50], [40.4, -73.6]],
+  // Americas lane: Los Angeles → Panama → New York
+  [[33.6, -118.4], [18, -106], [10, -90], [7.5, -81.5], [9.1, -79.7], [12, -77.5], [19.8, -73.9], [25, -74], [40.4, -73.6]],
+  // North Sea → Baltic via the Danish Straits
+  [[51.95, 3.9], [54.5, 6.5], [57.8, 10.6], [56.8, 11.8], [55.9, 12.6], [55.2, 15], [59.6, 24.5]],
+  // Black Sea grain: Odesa → Bosphorus → Mediterranean
+  [[45.8, 31.0], [43, 29.5], [41.1, 29.1], [40.3, 26.3], [38.2, 25], [36.2, 22.5], [37.2, 11.3]],
 ];
 
 const latLonToVec3 = (lat: number, lon: number, r: number) => {
@@ -131,12 +152,11 @@ export default function ThreeGlobe() {
     );
     scene.add(stars);
 
-    // trade arcs + travelling pulses (inside the globe group so they rotate with it)
-    const bySlug = Object.fromEntries(CHOKEPOINTS.map((c) => [c.slug, c]));
-    const arcMat = new THREE.MeshBasicMaterial({
+    // trade lanes + travelling pulses (inside the globe group so they rotate with it)
+    const laneMat = new THREE.MeshBasicMaterial({
       color: 0xf2b950,
       transparent: true,
-      opacity: 0.22,
+      opacity: 0.26,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
@@ -148,20 +168,53 @@ export default function ThreeGlobe() {
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
-    const pulses: Array<{ mesh: THREE.Mesh; curve: THREE.CubicBezierCurve3; dur: number; phase: number }> = [];
-    for (const [a, b] of ARCS) {
-      const va = latLonToVec3(bySlug[a].lat, bySlug[a].lon, 1.002);
-      const vb = latLonToVec3(bySlug[b].lat, bySlug[b].lon, 1.002);
-      const dist = va.distanceTo(vb);
-      const alt = 1 + dist * 0.28;
-      const c1 = va.clone().lerp(vb, 0.28).normalize().multiplyScalar(alt);
-      const c2 = va.clone().lerp(vb, 0.72).normalize().multiplyScalar(alt);
-      const curve = new THREE.CubicBezierCurve3(va, c1, c2, vb);
-      const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 48, 0.0022, 6), arcMat);
-      globe.add(tube);
-      const pulse = new THREE.Mesh(pulseGeo, pulseMat);
-      globe.add(pulse);
-      pulses.push({ mesh: pulse, curve, dur: 3800 + Math.random() * 3800, phase: Math.random() });
+    // great-circle interpolation between consecutive waypoints, on the surface
+    const LANE_R = 1.004;
+    const laneGeos: THREE.BufferGeometry[] = [];
+    const pulses: Array<{ mesh: THREE.Mesh; curve: THREE.Curve<THREE.Vector3>; dur: number; phase: number }> = [];
+    for (const wps of ROUTES) {
+      const pts: THREE.Vector3[] = [];
+      for (let i = 0; i < wps.length - 1; i++) {
+        const a = latLonToVec3(wps[i][0], wps[i][1], 1).normalize();
+        const b = latLonToVec3(wps[i + 1][0], wps[i + 1][1], 1).normalize();
+        const omega = Math.acos(THREE.MathUtils.clamp(a.dot(b), -1, 1));
+        const steps = Math.max(2, Math.ceil(omega / 0.05)); // ~3° per step
+        for (let s = i === 0 ? 0 : 1; s <= steps; s++) {
+          const t = s / steps;
+          const p = a
+            .clone()
+            .multiplyScalar(Math.sin((1 - t) * omega))
+            .add(b.clone().multiplyScalar(Math.sin(t * omega)))
+            .divideScalar(Math.sin(omega) || 1)
+            .multiplyScalar(LANE_R);
+          pts.push(p);
+        }
+      }
+      const curve = new THREE.CatmullRomCurve3(pts, false, "catmullrom", 0.1);
+      const tubeGeo = new THREE.TubeGeometry(curve, pts.length * 2, 0.0022, 6);
+      laneGeos.push(tubeGeo);
+      globe.add(new THREE.Mesh(tubeGeo, laneMat));
+      const len = curve.getLength();
+      const nPulses = len > 2.2 ? 2 : 1; // long lanes carry two pulses
+      for (let k = 0; k < nPulses; k++) {
+        const pulse = new THREE.Mesh(pulseGeo, pulseMat.clone());
+        globe.add(pulse);
+        pulses.push({ mesh: pulse, curve, dur: 5200 + len * 6500, phase: Math.random() * 0.5 + k * 0.5 });
+      }
+    }
+
+    // port dots: quiet steel points where the lanes begin and end
+    const portGeo = new THREE.SphereGeometry(0.0075, 10, 10);
+    const portMat = new THREE.MeshBasicMaterial({
+      color: 0x9fb4cc,
+      transparent: true,
+      opacity: 0.65,
+      depthWrite: false,
+    });
+    for (const [lat, lon] of PORTS) {
+      const dot = new THREE.Mesh(portGeo, portMat);
+      dot.position.copy(latLonToVec3(lat, lon, 1.004));
+      globe.add(dot);
     }
 
     // instrument bezel: a graduated ring around the Earth, turning slowly.
@@ -211,7 +264,7 @@ export default function ThreeGlobe() {
       el.className = "map-marker map-marker-link";
       el.href = `/straits#${c.slug}`;
       el.setAttribute("aria-label", `${c.name} strait monitor`);
-      el.style.cssText = "position:absolute;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;";
+      el.style.cssText = "position:absolute;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;";
       const label = document.createElement("span");
       label.className = "map-marker-label";
       label.textContent = c.name;
@@ -372,9 +425,13 @@ export default function ThreeGlobe() {
       (stars.material as THREE.Material).dispose();
       bezelMat.dispose();
       bezel.children.forEach((c) => (c as THREE.Line).geometry.dispose());
-      arcMat.dispose();
+      laneMat.dispose();
+      laneGeos.forEach((g) => g.dispose());
       pulseGeo.dispose();
       pulseMat.dispose();
+      pulses.forEach((p) => (p.mesh.material as THREE.Material).dispose());
+      portGeo.dispose();
+      portMat.dispose();
       renderer.domElement.remove();
     };
   }, []);

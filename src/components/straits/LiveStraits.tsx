@@ -7,7 +7,12 @@ import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-const KEY = (import.meta as any).env?.PUBLIC_AISSTREAM_KEY as string | undefined;
+// aisstream key: a PUBLIC_ var ships in the client bundle by design (free,
+// revocable key; the fallback keeps the deployed site live even when the
+// build environment forgets the variable — rotate it at aisstream.io if abused).
+const KEY =
+  ((import.meta as any).env?.PUBLIC_AISSTREAM_KEY as string | undefined) ||
+  "fd6fd598e436ac812a074f87ee2e269890ea8471";
 
 type Strait = {
   slug: string;
@@ -42,7 +47,7 @@ export default function LiveStraits({ only }: { only?: string }) {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const [strait, setStrait] = useState<Strait>(initial);
   const [stats, setStats] = useState<{ total: number; moving: number; at: string } | null>(null);
-  const [state, setState] = useState<"connecting" | "live" | "nokey" | "error">("connecting");
+  const [state, setState] = useState<"connecting" | "live" | "error">("connecting");
 
   // map init once
   useEffect(() => {
@@ -141,39 +146,55 @@ export default function LiveStraits({ only }: { only?: string }) {
       };
       load();
       timer = window.setInterval(load, 10000);
-    } else if (!KEY) {
-      setState("nokey");
-      push();
     } else {
       setState("connecting");
-      ws = new WebSocket("wss://stream.aisstream.io/v0/stream");
-      ws.onopen = () => {
-        ws!.send(
-          JSON.stringify({
-            APIKey: KEY,
-            BoundingBoxes: [strait.bbox],
-            FilterMessageTypes: ["PositionReport"],
-          }),
-        );
-        setState("live");
+      let retries = 0;
+      const connect = () => {
+        if (disposed) return;
+        ws = new WebSocket("wss://stream.aisstream.io/v0/stream");
+        ws.onopen = () => {
+          ws!.send(
+            JSON.stringify({
+              APIKey: KEY,
+              BoundingBoxes: [strait.bbox],
+              FilterMessageTypes: ["PositionReport"],
+            }),
+          );
+          setState("live");
+        };
+        ws.onmessage = async (ev) => {
+          try {
+            // aisstream sends binary frames: Blob in browsers
+            const txt = typeof ev.data === "string" ? ev.data : await (ev.data as Blob).text();
+            const m = JSON.parse(txt);
+            const meta = m.MetaData;
+            const pr = m.Message?.PositionReport;
+            if (!meta || !pr) return;
+            retries = 0; // healthy stream
+            vessels.set(meta.MMSI, {
+              lon: meta.longitude,
+              lat: meta.latitude,
+              sog: pr.Sog ?? 0,
+              t: Date.now(),
+            });
+          } catch {}
+        };
+        // the free tier allows one connection per key: dropped sockets are
+        // normal when another tab or the weekly sampler holds the line.
+        // Back off and retry a few times before declaring the feed down.
+        ws.onclose = () => {
+          if (disposed) return;
+          if (retries < 3) {
+            retries += 1;
+            setState("connecting");
+            window.setTimeout(connect, 3000 * retries);
+          } else {
+            setState("error");
+          }
+        };
+        ws.onerror = () => ws?.close();
       };
-      ws.onmessage = async (ev) => {
-        try {
-          // aisstream sends binary frames: Blob in browsers
-          const txt = typeof ev.data === "string" ? ev.data : await (ev.data as Blob).text();
-          const m = JSON.parse(txt);
-          const meta = m.MetaData;
-          const pr = m.Message?.PositionReport;
-          if (!meta || !pr) return;
-          vessels.set(meta.MMSI, {
-            lon: meta.longitude,
-            lat: meta.latitude,
-            sog: pr.Sog ?? 0,
-            t: Date.now(),
-          });
-        } catch {}
-      };
-      ws.onerror = () => !disposed && setState("error");
+      connect();
       timer = window.setInterval(push, 2000);
     }
 
@@ -202,15 +223,13 @@ export default function LiveStraits({ only }: { only?: string }) {
       </div>
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3">
         <p className="t-meta" aria-live="polite">
-          {state === "nokey"
-            ? "aisstream key missing · add PUBLIC_AISSTREAM_KEY to site/.env (free key at aisstream.io) · Baltic works without it"
-            : state === "error"
-              ? "feed unreachable · retrying on next switch"
-              : state === "connecting"
-                ? "connecting to live feed…"
-                : stats
-                  ? `${stats.total} vessels · ${stats.moving} underway · ${strait.feed === "aisstream" ? "accumulating live broadcasts" : "full snapshot"} · updated ${stats.at}`
-                  : "…"}
+          {state === "error"
+            ? "feed unreachable · pick another strait or come back in a minute"
+            : state === "connecting"
+              ? "connecting to live feed…"
+              : stats
+                ? `${stats.total} vessels · ${stats.moving} underway · ${strait.feed === "aisstream" ? "accumulating live broadcasts" : "full snapshot"} · updated ${stats.at}`
+                : "…"}
         </p>
         <p className="t-meta">
           <span className="mr-3"><span className="mr-1.5 inline-block size-[7px] align-middle" style={{ background: "var(--accent)" }} />underway</span>

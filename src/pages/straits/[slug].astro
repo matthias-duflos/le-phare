@@ -10,6 +10,7 @@ import LiveStraits, { STRAITS } from "../../components/straits/LiveStraits";
 import StraitChart from "../../components/straits/StraitChart";
 import weekly from "../../data/transits-weekly.json";
 import incidents from "../../data/incidents.json";
+import { weekLabel } from "../../lib/week";
 
 export function getStaticPaths() {
   return Object.keys(weekly.chokepoints).map((slug) => ({ params: { slug } }));
@@ -50,13 +51,13 @@ const statusLine =
       <p class="t-caps">State of the strait</p>
       <h1 class="t-display mt-5 max-w-[18ch] text-[clamp(2.2rem,4.6vw,3.8rem)]">{cp.name}</h1>
       <p class="t-meta mt-6">
-        week {cp.week?.slice(5)} · data to {weekly.updated} · IMF PortWatch
+        week {weekLabel(cp.week)} · data refreshed {weekly.updated} · IMF PortWatch
       </p>
     </section>
 
     <section class="border-b border-line py-12">
       <div class="grid gap-8 sm:grid-cols-3 sm:divide-x sm:divide-[color:var(--line)] sm:[&>*]:px-8 sm:[&>*:first-child]:pl-0">
-        <Stat value={cp.last} label={`Transit calls · ${cp.week?.slice(5)}`} detail={`${cp.delta > 0 ? "+" : ""}${cp.delta} on the week`} accent />
+        <Stat value={cp.last} label={`Transit calls · ${weekLabel(cp.week)}`} detail={`${cp.delta > 0 ? "+" : ""}${cp.delta} on the week`} accent />
         <Stat value={cp.baseline ?? 0} label="2024-25 weekly baseline" detail={cp.status && cp.status !== "normal" ? `flagged ${cp.status}` : "no flag this week"} />
         <Stat value={cp.pct ?? 100} suffix="%" label="Of baseline" detail={cp.trend ?? "steady"} />
       </div>

@@ -5,9 +5,8 @@ import SiteFooter from "../components/SiteFooter.astro";
 import Logo from "../components/Logo.astro";
 import { LINKEDIN_URL, CONTACT_EMAIL } from "../lib/identity";
 
-// [PLACEHOLDER] — the bio below is explicitly marked for Matthias to replace
-// with his real details. LinkedIn and contact live in src/lib/identity.ts
-// and are omitted from the page while unset.
+// LinkedIn and contact live in src/lib/identity.ts and are omitted from the
+// page while unset.
 ---
 
 <Base
@@ -22,9 +21,16 @@ import { LINKEDIN_URL, CONTACT_EMAIL } from "../lib/identity";
       <h1 class="t-display mt-6 max-w-[14ch] text-[clamp(2.4rem,5vw,4rem)]">About Le Phare</h1>
       <div class="t-editorial mt-8 grid max-w-[62ch] gap-5">
         <p>
-          <mark class="bg-accent-wash text-ink">[PLACEHOLDER — five lines:
-          student profile, programme, the maritime/insurance interest, one
-          concrete credential, one human detail.]</mark>
+          I'm Matthias Duflos, a French student based in Marseille — a city
+          where the port is simply part of the scenery, and where I picked up
+          the habit of watching ships long before I started counting them.
+          What pulled me in is the question underneath marine insurance: how
+          do you price risk on an ocean you can only observe through imperfect
+          signals? Le Phare is my answer in practice — I designed and built
+          everything here end to end, from the AIS ingestion pipelines and the
+          incident curation to the charts and the weekly brief. Alongside my
+          studies I co-run a small web studio, which is where the craft of
+          making data legible comes from.
         </p>
         <p>
           Le Phare began as a simple observation: the data that moves marine

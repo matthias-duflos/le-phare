@@ -14,6 +14,7 @@ import Tag from "../components/ui/Tag.astro";
 import weekly from "../data/transits-weekly.json";
 import incidents from "../data/incidents.json";
 import anomalies from "../data/anomalies.json";
+import { weekLabel } from "../lib/week";
 
 const stats = {
   bab: (weekly.chokepoints as any)["bab-el-mandeb"],
@@ -126,9 +127,9 @@ const modules = [
       class="mx-auto grid max-w-[1320px] gap-y-8 px-6 py-12 sm:grid-cols-3 sm:divide-x sm:divide-[color:var(--line)] sm:[&>*]:px-8 sm:[&>*:first-child]:pl-0 sm:[&>*]:border-t-0"
       data-reveal-stagger
     >
-      <Stat value={stats.bab.last} label={`Bab el-Mandeb · ${stats.bab.week?.slice(5)}`} detail="weekly transit calls · IMF PortWatch" accent />
-      <Stat value={stats.suez.last} label={`Suez Canal · ${stats.suez.week?.slice(5)}`} detail="weekly transit calls · IMF PortWatch" />
-      <Stat value={stats.cape.last} label={`Cape of Good Hope · ${stats.cape.week?.slice(5)}`} detail="weekly transit calls · IMF PortWatch" />
+      <Stat value={stats.bab.last} label={`Bab el-Mandeb · ${weekLabel(stats.bab.week)}`} detail="weekly transit calls · IMF PortWatch" accent />
+      <Stat value={stats.suez.last} label={`Suez Canal · ${weekLabel(stats.suez.week)}`} detail="weekly transit calls · IMF PortWatch" />
+      <Stat value={stats.cape.last} label={`Cape of Good Hope · ${weekLabel(stats.cape.week)}`} detail="weekly transit calls · IMF PortWatch" />
     </div>
   </section>
 
@@ -218,7 +219,7 @@ const modules = [
                   {anomalyZones.map((z) => (
                     <span class="inline-block size-[14px]" style={`background:var(--accent);opacity:${Math.max(0.08, (z.n / anomalyMax) * 0.85)}`} title={z.name} />
                   ))}
-                  <span class="t-meta ml-2">anomalies by zone · {lastSession.week.slice(5)}</span>
+                  <span class="t-meta ml-2">anomalies by zone · {weekLabel(lastSession.week)}</span>
                 </span>
               )}
               {m.title === "Maritime risk lexicon" && (

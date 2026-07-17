@@ -54,6 +54,30 @@ export function plotDefaults(t: VizTheme) {
   };
 }
 
+/** Export the Plot SVG inside `container` as a 2x PNG on the page background.
+    Marks must use resolved colors (not var() strings) to survive serialization. */
+export function exportPlotPNG(container: HTMLElement | null, filename: string) {
+  const svg = container?.querySelector("svg");
+  if (!svg) return;
+  const xml = new XMLSerializer().serializeToString(svg);
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement("canvas");
+    c.width = svg.clientWidth * 2;
+    c.height = svg.clientHeight * 2;
+    const ctx = c.getContext("2d")!;
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--bg-0");
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.scale(2, 2);
+    ctx.drawImage(img, 0, 0);
+    const a = document.createElement("a");
+    a.download = filename;
+    a.href = c.toDataURL("image/png");
+    a.click();
+  };
+  img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(xml)));
+}
+
 /** Re-run a render function whenever the site theme flips. */
 export function onThemeChange(render: () => void): () => void {
   const mo = new MutationObserver((muts) => {

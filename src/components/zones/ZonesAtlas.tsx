@@ -192,22 +192,30 @@ export default function ZonesAtlas() {
         <p className="t-num w-[90px] font-mono text-lg text-ink">{label(month)}</p>
       </div>
 
-      {/* monthly incident strip: context + scrubber */}
-      <div className="mb-5 flex h-12 items-end gap-[3px]" aria-hidden="true">
+      {/* monthly incident strip: context + scrubber. Two eras, two colors:
+          the dense NGA ASAM archive stops at June 2024 (programme defunded),
+          later months carry only hand-curated events, hence thinner bars. */}
+      <div className="mb-2 flex h-12 items-end gap-[3px]" aria-hidden="true">
         {monthCounts.map((c, i) => (
           <button
             key={MONTHS[i]}
             onClick={() => { setPlaying(false); setIdx(i); }}
-            title={`${label(MONTHS[i])} · ${c} incidents`}
+            title={`${label(MONTHS[i])} · ${c} incidents · ${MONTHS[i] <= "2024-06" ? "NGA ASAM archive" : "curated from public reporting"}`}
             className="min-w-0 flex-1 cursor-pointer transition-opacity duration-150 hover:opacity-100"
             style={{
               height: `${Math.max((c / maxCount) * 100, 4)}%`,
-              background: i === idx ? "var(--accent)" : "var(--viz-context)",
+              background: i === idx ? "var(--accent)" : MONTHS[i] <= "2024-06" ? "var(--viz-context)" : "var(--viz-1)",
               opacity: i === idx ? 1 : 0.55,
             }}
           />
         ))}
       </div>
+      <p className="t-meta mb-5">
+        <span className="mr-1.5 inline-block size-[7px] align-middle" style={{ background: "var(--viz-context)" }} />
+        NGA ASAM archive, dense (to Jun 2024, programme defunded)
+        <span className="ml-4 mr-1.5 inline-block size-[7px] align-middle" style={{ background: "var(--viz-1)" }} />
+        curated from public reporting, selective — thinner bars reflect coverage, not calm seas
+      </p>
 
       {/* stats row */}
       <div className="mb-4 flex flex-wrap gap-x-8 gap-y-1">

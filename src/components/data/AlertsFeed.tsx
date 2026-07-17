@@ -32,6 +32,7 @@ export default function AlertsFeed({ max = 10, timespan = "48h" }: { max?: numbe
   const [snapshot, setSnapshot] = useState<string | null>(null);
 
   useEffect(() => {
+    let gone = false;
     // 15-minute session cache protects GDELT's 1-request/5s rate limit
     const CACHE = "phare-wire";
     try {
@@ -41,22 +42,29 @@ export default function AlertsFeed({ max = 10, timespan = "48h" }: { max?: numbe
         return;
       }
     } catch {}
-    const useSnapshot = () =>
-      fetch("/data/wire.json")
-        .then((r) => r.json())
-        .then((d) => {
-          setArticles(dedupe(d.articles, max));
-          setSnapshot(d.fetched?.slice(0, 10) ?? "");
-        })
-        .catch(() => setArticles([]));
+    // snapshot first: the weekly wire.json paints instantly, then the live
+    // GDELT fetch (often several seconds) replaces it when it lands.
+    fetch("/data/wire.json")
+      .then((r) => r.json())
+      .then((d) => {
+        if (gone) return;
+        setArticles((cur) => cur ?? dedupe(d.articles, max));
+        setSnapshot((cur) => cur ?? (d.fetched?.slice(0, 10) ?? ""));
+      })
+      .catch(() => {});
     fetch(URL_)
       .then((r) => r.json())
       .then((d) => {
         if (!d.articles) throw new Error("rate limited");
         sessionStorage.setItem(CACHE, JSON.stringify({ at: Date.now(), articles: d.articles }));
+        if (gone) return;
         setArticles(dedupe(d.articles, max));
+        setSnapshot(null);
       })
-      .catch(useSnapshot);
+      .catch(() => !gone && setArticles((cur) => cur ?? []));
+    return () => {
+      gone = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -121,7 +121,7 @@ const icons = [
           [
             ["The chart carries the conclusion", "Figure titles are statements, not descriptions. One hero series in amber, context in muted blues, events annotated on the axis, source in mono below."],
             ["Darkness is the paper", "No borders where a 2 to 4 percent lightness step will do. Hairlines at 8 percent. Amber appears three times per screen at most; red only for incidents."],
-            ["Serif argues, sans measures, mono locates", "Newsreader for titles and editorial voice. Inter for interface and labels. JetBrains Mono for coordinates, timestamps and identifiers. Tabular figures wherever numbers meet."],
+            ["Serif argues, sans measures, mono locates", "Spectral for titles and editorial voice. Archivo for interface and labels. IBM Plex Mono for coordinates, timestamps and identifiers. Tabular figures wherever numbers meet."],
             ["Density in layers, finish at the pixel", "The number first, the trend second, the detail on hover. Transitions of 150 to 250 ms with a pronounced ease-out. Every animation states something."],
             ["Honesty is a design element", "Sources under every figure, aggregation only, a methodology page built with the same care as the home page."],
           ].map(([title, body], i) => (
@@ -182,8 +182,8 @@ const icons = [
     <section class="border-b border-line py-16">
       <h2 class="t-serif mb-2 text-3xl" data-reveal>Typography</h2>
       <p class="mb-12 max-w-[60ch] text-sm text-ink-2">
-        Newsreader carries the argument, Inter runs the instruments,
-        JetBrains Mono keeps the ship's log.
+        Spectral carries the argument, Archivo runs the instruments,
+        IBM Plex Mono keeps the ship's log.
       </p>
 
       <div class="grid gap-10" data-reveal-stagger>
@@ -206,9 +206,9 @@ const icons = [
           </p>
         </div>
         <div class="grid items-baseline gap-2 md:grid-cols-12">
-          <p class="t-meta md:col-span-2">UI body<br />16px Inter</p>
+          <p class="t-meta md:col-span-2">UI body<br />16px Archivo</p>
           <p class="md:col-span-10 max-w-[62ch] text-ink-2">
-            Interface text is set in Inter. Labels stay short, sentence case,
+            Interface text is set in Archivo. Labels stay short, sentence case,
             and never compete with the data they describe.
           </p>
         </div>
@@ -232,7 +232,7 @@ const icons = [
       <!-- Serif alternative -->
       <div class="mt-16 grid gap-8 border-t border-line pt-10 lg:grid-cols-2" data-reveal-stagger>
         <div>
-          <p class="t-caps mb-4">Recommended · Newsreader</p>
+          <p class="t-caps mb-4">Recommended · Spectral</p>
           <p class="t-display text-[2.6rem]">Suez transits have halved since November</p>
           <p class="mt-3 text-sm text-ink-2 max-w-[46ch]">
             Cool, transitional, close to the register of a broadsheet.
@@ -261,7 +261,7 @@ const icons = [
       <h2 class="t-serif mb-2 text-3xl">Iconography</h2>
       <p class="mb-10 max-w-[60ch] text-sm text-ink-2">
         A custom maritime set: 20 px grid, 1.5 stroke, square terminals,
-        drawn to sit next to JetBrains Mono.
+        drawn to sit next to IBM Plex Mono.
       </p>
       <div class="grid grid-cols-3 gap-px bg-[color:var(--line)] sm:grid-cols-4 lg:grid-cols-6" data-reveal-stagger>
         {
@@ -514,7 +514,7 @@ const icons = [
 
     const mm = gsap.matchMedia();
     mm.add("(prefers-reduced-motion: no-preference)", () => {
-      // wait for Newsreader before splitting lines, or breaks land wrong
+      // wait for Spectral before splitting lines, or breaks land wrong
       document.fonts.ready.then(() => {
         const title = document.getElementById("masthead-title");
         if (title) {

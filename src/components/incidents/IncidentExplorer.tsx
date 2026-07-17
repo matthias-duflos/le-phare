@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import * as Plot from "@observablehq/plot";
-import { readTheme, plotDefaults, onThemeChange } from "../../lib/viz";
+import { readTheme, plotDefaults, onThemeChange, exportPlotPNG } from "../../lib/viz";
 import incidentsRaw from "../../data/incidents.json";
 
 type Incident = {
@@ -251,10 +251,11 @@ export default function IncidentExplorer() {
         );
       }
       if (typeRef.current) {
+        // resolved theme colors (not var() strings) so the PNG export keeps them
         const byType = TYPE_ORDER.map((k) => ({
           type: TYPE_LABELS[k],
           n: filtered.filter((i) => i.type === k).length,
-          c: typeVar(k),
+          c: t.series[TYPE_ORDER.indexOf(k)],
         })).filter((d) => d.n > 0);
         typeRef.current.replaceChildren(
           Plot.plot({
@@ -308,6 +309,12 @@ export default function IncidentExplorer() {
     draw();
     return onThemeChange(draw);
   }, [filtered]);
+
+  // PNG filename mirrors the active filters, so the file says what it shows
+  const pngName = (chart: string) =>
+    `le-phare-incidents-${chart}-${year === "all" ? "2022-2026" : year}${
+      zone ? "-" + zone.toLowerCase().replace(/[^a-z0-9]+/g, "-") : ""
+    }.png`;
 
   const toggleType = (t: string) =>
     setTypes((prev) => {
@@ -389,24 +396,33 @@ export default function IncidentExplorer() {
 
       {/* charts row, left to right */}
       <div className="grid gap-10 md:grid-cols-2 xl:grid-cols-3">
-        <div>
-          <p className="t-serif text-xl">Monthly trend</p>
-          <p className="mt-1 text-sm text-ink-3">
-            Incidents per month by type ·{" "}
-            {year === "2026" ? "curated 2026, sample" : year === "all" ? "ASAM archive + curated 2026" : `NGA ASAM archive, ${year}`}
-          </p>
-          <div ref={chartRef} className="mt-4 [&_svg]:w-full" />
-        </div>
-        <div>
-          <p className="t-serif text-xl">Where</p>
-          <p className="mt-1 text-sm text-ink-3">Incidents by zone, top 8, current filters</p>
-          <div ref={zoneRef} className="mt-4 [&_svg]:w-full" />
-        </div>
-        <div>
-          <p className="t-serif text-xl">What</p>
-          <p className="mt-1 text-sm text-ink-3">Incidents by type, current filters</p>
-          <div ref={typeRef} className="mt-4 [&_svg]:w-full" />
-        </div>
+        {(
+          [
+            {
+              ref: chartRef,
+              slug: "monthly-trend",
+              title: "Monthly trend",
+              sub: `Incidents per month by type · ${year === "2026" ? "curated 2026" : year === "all" ? "ASAM archive + curated" : `NGA ASAM archive, ${year}`}`,
+            },
+            { ref: zoneRef, slug: "by-zone", title: "Where", sub: "Incidents by zone, top 8, current filters" },
+            { ref: typeRef, slug: "by-type", title: "What", sub: "Incidents by type, current filters" },
+          ] as const
+        ).map((c) => (
+          <div key={c.slug}>
+            <p className="flex items-baseline justify-between gap-3">
+              <span className="t-serif text-xl">{c.title}</span>
+              <button
+                onClick={() => exportPlotPNG(c.ref.current, pngName(c.slug))}
+                title={`Download “${c.title}” as PNG — ${pngName(c.slug)}`}
+                className="t-caps cursor-pointer border border-line-2 rounded-r1 px-2 py-1 !text-ink-3 transition-colors duration-150 hover:border-[color:var(--accent)] hover:!text-accent-text"
+              >
+                PNG ↓
+              </button>
+            </p>
+            <p className="mt-1 text-sm text-ink-3">{c.sub}</p>
+            <div ref={c.ref} className="mt-4 [&_svg]:w-full" />
+          </div>
+        ))}
       </div>
 
       {/* incident cards, flowing left to right */}

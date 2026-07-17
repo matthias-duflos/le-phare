@@ -5,6 +5,7 @@ import SiteFooter from "../components/SiteFooter.astro";
 import Sparkline from "../components/ui/Sparkline.astro";
 import LiveStraits from "../components/straits/LiveStraits";
 import weekly from "../data/transits-weekly.json";
+import { weekLabel } from "../lib/week";
 
 // Real weekly transit calls from IMF PortWatch (all vessel types).
 const ORDER = ["bab-el-mandeb", "suez", "good-hope", "hormuz", "malacca", "gibraltar", "panama", "bosphorus", "danish-straits", "dover", "taiwan-strait", "kerch"];
@@ -55,17 +56,22 @@ const rerouting = weekly.rerouting.at(-1);
         {
           chokepoints.map((c) => (
             <a href={`/straits/${c.slug}`} id={c.slug} class="group block scroll-mt-28 border-t border-line-2 pt-4 transition-colors duration-150 target:bg-accent-wash">
-              <p class="flex items-baseline justify-between gap-3">
-                <span class="t-serif text-xl transition-colors duration-150 group-hover:text-accent-text">{c.name}</span>
-                {(weekly.chokepoints as any)[c.slug].status !== "normal" && (
+              <p class="t-serif text-xl transition-colors duration-150 group-hover:text-accent-text">{c.name}</p>
+              {(weekly.chokepoints as any)[c.slug].status !== "normal" && (
+                <p class={`mt-1.5 border-l-2 pl-2.5 ${(weekly.chokepoints as any)[c.slug].status === "critical" ? "border-[color:var(--risk)]" : "border-[color:var(--accent)]"}`}>
                   <span class={`t-caps ${(weekly.chokepoints as any)[c.slug].status === "critical" ? "!text-risk-text" : "!text-accent-text"}`}>
-                    {(weekly.chokepoints as any)[c.slug].status} · {(weekly.chokepoints as any)[c.slug].pct}% of baseline
+                    <span class="mr-1.5 inline-block size-[7px] align-middle" style={`background:${(weekly.chokepoints as any)[c.slug].status === "critical" ? "var(--risk)" : "var(--accent)"}`} />
+                    {(weekly.chokepoints as any)[c.slug].status}
                   </span>
-                )}
-              </p>
+                  <span class="t-meta ml-2">
+                    {(weekly.chokepoints as any)[c.slug].pct}% of its 2024-25 baseline · {c.value}/wk vs ~{(weekly.chokepoints as any)[c.slug].baseline}
+                    {(weekly.chokepoints as any)[c.slug].trend ? ` · ${(weekly.chokepoints as any)[c.slug].trend}` : ""}
+                  </span>
+                </p>
+              )}
               <Sparkline points={c.pts} width={200} height={44} class="mt-3" />
               <p class="t-meta t-num mt-2">
-                {c.value} in {c.week?.slice(5)}
+                {c.value} in {weekLabel(c.week)}
                 <span class={c.delta > 0 ? "!text-[color:var(--viz-2)]" : c.delta < 0 ? "!text-risk-text" : ""}>
                   {" "}{c.delta > 0 ? `+${c.delta}` : c.delta === 0 ? "±0" : c.delta}
                 </span>
