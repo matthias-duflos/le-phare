@@ -47,6 +47,27 @@ export const STRAITS: Strait[] = [
 const PRUNE_MS = 12 * 60000; // drop vessels silent for 12 min
 const CACHE_KEY = "phare-ais-cache"; // warm-start store, same freshness rule
 
+// "good picture" per strait: benchmarked against what the receiver network
+// actually delivers (scripts/bench-ais.mjs) — the busy, well-covered straits
+// reach these within one to two minutes of listening; the war-zone straits
+// have almost no volunteer receivers and honesty beats pretending.
+const GOOD: Record<string, number> = {
+  "danish-straits": 150,
+  dover: 40,
+  gibraltar: 40,
+  "good-hope": 40,
+  malacca: 40,
+  suez: 25,
+  bosphorus: 15,
+  "taiwan-strait": 5,
+  panama: 3,
+  "bab-el-mandeb": 2,
+  hormuz: 2,
+  kerch: 2,
+};
+// straits where shore-receiver coverage is structurally thin or nil
+const THIN = new Set(["bab-el-mandeb", "hormuz", "kerch", "panama", "taiwan-strait"]);
+
 export default function LiveStraits({ only }: { only?: string }) {
   const initial = STRAITS.find((s) => s.slug === only) ?? STRAITS[0];
   const mapDiv = useRef<HTMLDivElement>(null);
@@ -132,7 +153,9 @@ export default function LiveStraits({ only }: { only?: string }) {
           JSON.stringify({
             APIKey: KEY,
             BoundingBoxes: subs.map((s) => s.bbox), // every strait at once
-            FilterMessageTypes: ["PositionReport"],
+            // no FilterMessageTypes: Class B craft, static-data reports and
+            // everything else carry a position in MetaData too — benchmarked
+            // 2.2x more unique vessels per minute than PositionReport alone
           }),
         );
         setWsState("live");
@@ -143,13 +166,18 @@ export default function LiveStraits({ only }: { only?: string }) {
           const txt = typeof ev.data === "string" ? ev.data : await (ev.data as Blob).text();
           const m = JSON.parse(txt);
           const meta = m.MetaData;
-          const pr = m.Message?.PositionReport;
-          if (!meta || !pr) return;
+          if (!meta || meta.latitude == null || meta.longitude == null) return;
           retries = 0; // healthy stream
+          const sog =
+            m.Message?.PositionReport?.Sog ??
+            m.Message?.StandardClassBPositionReport?.Sog ??
+            m.Message?.ExtendedClassBPositionReport?.Sog ??
+            world.current.get(meta.MMSI)?.sog ??
+            0;
           world.current.set(meta.MMSI, {
             lon: meta.longitude,
             lat: meta.latitude,
-            sog: pr.Sog ?? 0,
+            sog,
             t: Date.now(),
           });
         } catch {}
@@ -280,11 +308,15 @@ export default function LiveStraits({ only }: { only?: string }) {
             ? "feed unreachable · pick another strait or come back in a minute"
             : stats && stats.total > 0
               ? `${stats.total} vessels · ${stats.moving} underway · ${
-                  strait.feed === "aisstream" ? `heard over the last ${Math.min(heardMin, 12)} min` : "full snapshot"
+                  strait.feed === "aisstream"
+                    ? `picture ${stats.total >= (GOOD[strait.slug] ?? 20) ? "good" : "building"} (target ${GOOD[strait.slug] ?? 20}) · heard over the last ${Math.min(heardMin, 12)} min`
+                    : "full snapshot"
                 } · updated ${stats.at}`
               : state === "connecting"
                 ? "connecting to live feed…"
-                : "listening… every strait accumulates in the background from page load"}
+                : THIN.has(strait.slug)
+                  ? "listening… coverage is structurally thin here: few or no volunteer shore receivers (war zone / jamming), not a bug"
+                  : "listening… every strait accumulates in the background from page load"}
         </p>
         <p className="t-meta">
           <span className="mr-3"><span className="mr-1.5 inline-block size-[7px] align-middle" style={{ background: "var(--accent)" }} />underway</span>
