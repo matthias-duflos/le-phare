@@ -17,7 +17,7 @@ const slugFile = `${today}.md`;
 const dest = new URL(`../src/content/briefs/${slugFile}`, import.meta.url);
 
 const briefsDir = new URL("../src/content/briefs/", import.meta.url);
-const issues = readdirSync(briefsDir).filter((f) => f.endsWith(".md"));
+const issues = readdirSync(briefsDir).filter((f) => f.endsWith(".md") || f.endsWith(".mdx"));
 const alreadyCovered = issues.some((f) => readFileSync(new URL(f, briefsDir), "utf8").includes(`data week ${week}`));
 if (alreadyCovered || existsSync(dest)) {
   console.log(`brief for ${alreadyCovered ? `data week ${week}` : today} already exists, nothing to do`);

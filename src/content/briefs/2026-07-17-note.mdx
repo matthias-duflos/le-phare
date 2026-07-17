@@ -1,0 +1,108 @@
+---
+issue: 4
+title: "The week the ceasefire died"
+dek: "Hormuz clears 115 weekly transits against a ~656 baseline, hull war cover trades near five points, and the Cape has stopped being a detour — it is the network now."
+date: 2026-07-17
+period: "data week 2026-W28 · to 2026-07-12 · wire to 2026-07-17"
+chart: none
+format: note
+tags: ["intelligence-note", "hormuz", "war-risk", "rerouting"]
+---
+
+import { NoteGrid, NoteText, NoteAside, Fig, KeyFigs, Signal } from "../../components/charts/NoteKit";
+import { HormuzChart, TaiwanChart, ReroutingChart } from "../../components/charts/NoteCharts";
+
+<NoteGrid>
+<NoteText kicker="Lead analysis · Strait of Hormuz" title="Hormuz at 18 cents on the dollar">
+
+The 17 June ceasefire lasted four weeks on paper and less than that on the water. This week the United States [renewed its blockade of Iran](https://www.oedigital.com/news/541268-hormuz-crossings-decline-as-us-renews-iran-blockade), [expanded strikes into northern Iran and disabled a merchant ship](https://www.naharnet.com/stories/en/321284-us-expands-strikes-into-northern-iran-and-disables-ship-trying-to-run-blockade) attempting to run the cordon — the tanker BELMA, fired into her smokestack while sailing unladen toward Kharg Island, the first enforcement action of the renewed blockade. Tehran answered by [threatening to halt energy exports altogether](https://www.wmur.com/article/iran-threatens-energy-exports-us-bombings-blockade-escalate/72460174).
+
+The observatory's transit data states the consequence without adjectives: **115 transit calls through Hormuz in week 28, against a 2024–25 baseline of ~656 — 18% of normal, and another 90 calls lost week-on-week.** Since the air war opened on 28 February, the strait has seen IRGC boarding parties, sea mines, and missile strikes on commercial hulls; what June's ceasefire briefly restored — [Saudi Arabia alone pushed ~34 million barrels through the strait in the recovery window](https://www.breakwaveadvisors.com/insights/7142026wetreportkjujun459bl7-kk78) — is now unwinding for the second time.
+
+The market's repricing is the sharpest signal. Hull war-risk cover for a Hormuz transit, [0.125–0.4% of vessel value before the crisis, now trades around 5%](https://www.thenationalnews.com/business/economy/2026/06/03/hormuz-shipping-trade-iran-war/) — on a $100m VLCC, a $6m premium *per voyage*, when cover can be found at all: [several markets simply withdrew](https://www.aljazeera.com/economy/2026/3/3/maritime-insurers-cancel-war-risk-cover-in-gulf-will-it-spike-energy-cost), pushing governments toward [insurer-of-last-resort roles](https://www.weforum.org/stories/2026/04/how-middle-east-war-turning-governments-into-insurers-last-resort/). Freight followed: [the VLCC index cleared $420,000 a day](https://www.lloydslist.com/LL1156492/Crude-tanker-rates-in-unchartered-territory-VLCC-index-tops-420K), with [spot fixtures reported near $470,000](https://oilprice.com/Latest-Energy-News/World-News/VLCC-Earnings-Near-470000-a-Day-as-Hormuz-Hopes-Drive-Tanker-Frenzy.html) and Gulf time-charter equivalents [roughly doubling inside a week](https://www.breakwaveadvisors.com/insights/7142026wetreportkjujun459bl7-kk78). [Chinese and Indian state refiners are failing to fix tonnage at any workable rate](https://www.cnbc.com/2026/03/03/middle-east-crisis-iran-us-shipping-oil-tankers-strait-of-hormuz.html), and [New Delhi has asked owners to stop deploying Indian seafarers on Hormuz voyages](https://www.newindianexpress.com/india/2026/Jul/16/centre-asks-shipping-firms-to-stop-deploying-indian-seafarers-on-strait-of-hormuz-voyages) — a crew-supply constraint that will outlast any single strike.
+
+The reading: this is no longer a risk-premium story but a capacity story. [VLCC liftings through the strait are down roughly a third while voyages lengthen](https://www.lloydslist.com/LL1157100/Hormuz-crisis-slashes-VLCC-volumes-by-36-but-voyages-are-longer), which tightens effective tanker supply worldwide — the mechanism by which a regional blockade becomes a global freight event. Watch two numbers next week: the transit count against the 115 floor, and whether any hull market re-quotes below five points. Neither moved the right way this week.
+
+</NoteText>
+<NoteAside>
+<Fig
+  title="Hormuz runs at 18% of its baseline"
+  subtitle="Weekly vessel transit calls, all types, 2026 to week 28."
+  source="Source: IMF PortWatch"
+>
+  <HormuzChart client:visible />
+</Fig>
+<KeyFigs items={[
+  { v: "115", l: "transit calls, W28 (−90 wk-on-wk)" },
+  { v: "~5%", l: "hull war-risk per transit, vs 0.125–0.4% pre-crisis" },
+  { v: "$470k", l: "reported VLCC spot earnings, per day" },
+  { v: "−36%", l: "VLCC liftings through the strait" },
+]} />
+</NoteAside>
+</NoteGrid>
+
+<NoteGrid>
+<NoteText kicker="Second subject · Red Sea & rerouting" title="The Cape is not a detour anymore — it is the network">
+
+While attention sits on Hormuz, the Red Sea has quietly consolidated into the market's structural state. The observatory's rerouting index — Cape of Good Hope transits divided by Suez transits — printed **2.2 in week 28**: the long way round carries more than twice the short way's traffic, nineteen months into the diversion. Bab el-Mandeb held at 226 weekly calls (−12), a corridor functioning at a fraction of its design load without further shock.
+
+The forward picture matches: [carriers keep Cape routing as the default for Asia–Europe services and the industry consensus now runs through at least 2027](https://www.seatrade-maritime.com/containers/shipping-lines-reroute-from-red-sea-avoiding-houthi-threat), with [Suez's share of east–west volumes stuck near 18.7% against ~80% pre-crisis](https://www.spglobal.com/market-intelligence/en/news-insights/research/2026/02/red-sea-shipping-reopens). The 10–14 added days and ~3,500 added miles per round voyage are no longer an exception being absorbed — they are the baseline against which fleets, schedules and bunker contracts have been rebuilt.
+
+The novel wrinkle is relative risk. With Hormuz now the most dangerous water on earth, [box operators exiting the Gulf are re-examining the Red Sea](https://www.lloydslist.com/LL1156478/Iran-attacks-prompt-Red-Sea-rethink-as-box-shipping-exits-Strait-of-Hormuz) — a corridor priced as uninsurable in 2024 becomes, by comparison, merely expensive. For underwriters this is the week's quiet lesson: war-risk zones are not rated in isolation but against each other, and a blockade in one strait re-prices three others.
+
+</NoteText>
+<NoteAside>
+<Fig
+  title="The Cape carries 2.2× Suez's traffic"
+  subtitle="Weekly Cape of Good Hope transits ÷ Suez transits. Above 1: the long way round wins."
+  source="Source: IMF PortWatch"
+>
+  <ReroutingChart client:visible />
+</Fig>
+</NoteAside>
+</NoteGrid>
+
+<NoteGrid>
+<NoteText kicker="Third subject · Taiwan Strait" title="In the Taiwan Strait, weather out-moved the warships">
+
+The sharpest single move in this week's transit table is not in the Middle East: **Taiwan Strait, −282 calls week-on-week to 1,454.** The proximate cause is meteorological, not military — [Typhoon Bavi crossed Okinawa and Taiwan before landfall in Zhejiang](https://www.thesignalgroup.com/newsroom/typhoon-bavi-hits-taiwan-china-disrupting-pacific-vessel-supply-update), suspending ferries, clearing anchorages and pushing Chinese hulls out of exposed ports.
+
+The geopolitical layer still deserves the file note. Bavi's passage coincided with [Chinese coast-guard vessels entering waters that sharpened friction with Japan](https://www.ibtimes.sg/typhoon-bavi-fuels-china-japan-tensions-after-coast-guard-vessels-enter-taiwan-strait-89709), [PLAN activity around Taiwan trending upward](https://www.taipeitimes.com/News/front/archives/2026/07/07/2003860343), and the opening of the [China–Russia "Maritime Joint 2026" exercise in the Yellow Sea](https://www.aei.org/articles/china-taiwan-update-july-2-2026/). None of it moved commercial traffic the way 90 knots of wind did — a useful calibration for anyone modelling what an *actual* interdiction of the strait would look like against a baseline of ~1,700 weekly calls.
+
+Expect the series to mean-revert within two weeks; if it does not, the residual is the number to explain.
+
+</NoteText>
+<NoteAside>
+<Fig
+  title="A typhoon, not a blockade: −282 calls in one week"
+  subtitle="Taiwan Strait weekly vessel transit calls, 2026 to week 28."
+  source="Source: IMF PortWatch"
+>
+  <TaiwanChart client:visible />
+</Fig>
+</NoteAside>
+</NoteGrid>
+
+<section className="border-t border-line py-12">
+<p className="t-caps">Signals ledger · below the fold, on the record</p>
+<div className="mt-6">
+<Signal flag="risk" title="Kerch Strait">
+Flagged critical at 44% of its 2024–25 baseline (28 weekly calls against ~64). The Azov grain and fuel trade continues to run on a war footing; positions there remain largely dark to open AIS.
+</Signal>
+<Signal flag="watch" title="Singapore Strait robbery wave">
+After ReCAAP's Incident Alert 1/2026 (three bulk carriers boarded in the Phillip Channel inside 48 hours in March), the half-year closes at 21 incidents in the Malacca and Singapore straits — down 74% on H1 2025's spike, but concentrated in the eastbound TSS lane at night.
+</Signal>
+<Signal flag="watch" title="Baltic GNSS interference">
+The 14-state démarche of January against Russian-origin jamming still describes the operating environment: interference remains endemic in the Gulf of Finland and eastern Baltic, degrading GMDSS and complicating shadow-fleet tracking. Our AIS integrity watch tracks it weekly.
+</Signal>
+<Signal title="Official warnings">
+7 security-relevant NAVAREA/HYDRO warnings active of 386 broadcast worldwide — firings, mines, ordnance and interference, mapped live on the incidents page.
+</Signal>
+</div>
+</section>
+
+<section className="border-t border-line py-10">
+<p className="t-meta max-w-[80ch] leading-relaxed">
+Method: transit figures are IMF PortWatch weekly aggregates (satellite-derived, ~5-day lag) read against each chokepoint's 2024–25 baseline; incident records are auto-ingested from ReCAAP ISC and IMB PRC with the brief's own curation for events those feeds miss; market figures are cited to their reporting. Every number on this page is reproducible from the <a href="/data" class="link">data lab</a>. Written and assembled by Le Phare; not investment or routing advice.
+</p>
+</section>
