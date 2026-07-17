@@ -1,8 +1,11 @@
 // Live AIS over every monitored strait. Two feeds:
 //  · Baltic — Fintraffic Digitraffic REST (open, no key, full snapshot)
-//  · everywhere else — aisstream.io websocket (free key, positions accumulate
-//    as vessels broadcast; a busy strait fills in seconds)
-// Pills switch strait; the map reconnects to the selected feed.
+//  · everywhere else — ONE aisstream.io websocket subscribed to ALL strait
+//    boxes from page load: the picture accumulates in the background while
+//    the visitor is still reading, so switching straits shows everything
+//    already heard instead of an empty map filling one dot at a time.
+//    Last-heard positions are also cached locally, so a return visit
+//    starts warm instead of black.
 import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -13,6 +16,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 const KEY =
   ((import.meta as any).env?.PUBLIC_AISSTREAM_KEY as string | undefined) ||
   "fd6fd598e436ac812a074f87ee2e269890ea8471";
+
+type Vessel = { lon: number; lat: number; sog: number; t: number };
 
 type Strait = {
   slug: string;
@@ -40,6 +45,7 @@ export const STRAITS: Strait[] = [
 ];
 
 const PRUNE_MS = 12 * 60000; // drop vessels silent for 12 min
+const CACHE_KEY = "phare-ais-cache"; // warm-start store, same freshness rule
 
 export default function LiveStraits({ only }: { only?: string }) {
   const initial = STRAITS.find((s) => s.slug === only) ?? STRAITS[0];
@@ -47,9 +53,17 @@ export default function LiveStraits({ only }: { only?: string }) {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const [strait, setStrait] = useState<Strait>(initial);
   const [stats, setStats] = useState<{ total: number; moving: number; at: string } | null>(null);
-  const [state, setState] = useState<"connecting" | "live" | "error">("connecting");
+  const [wsState, setWsState] = useState<"connecting" | "live" | "error">("connecting");
+  const [balticState, setBalticState] = useState<"connecting" | "live" | "error">("connecting");
+  // vessel stores live outside React: the websocket writes, the 2 s render
+  // loop reads — no re-render per AIS message
+  const world = useRef<Map<number, Vessel>>(new Map());
+  const baltic = useRef<Map<number, Vessel>>(new Map());
+  const heardSince = useRef<number>(Date.now());
 
-  // map init once
+  const state = strait.feed === "digitraffic" ? balticState : wsState;
+
+  /* ---------- map init, once ---------- */
   useEffect(() => {
     if (!mapDiv.current) return;
     const map = new maplibregl.Map({
@@ -85,31 +99,148 @@ export default function LiveStraits({ only }: { only?: string }) {
       map.on("mouseenter", "ais-dots", () => (map.getCanvas().style.cursor = "pointer"));
       map.on("mouseleave", "ais-dots", () => (map.getCanvas().style.cursor = ""));
       mapRef.current = map;
-      setStrait({ ...initial }); // trigger feed effect after source exists
+      setStrait({ ...initial }); // trigger render effect once the source exists
     });
     return () => map.remove();
   }, []);
 
-  // feed per strait
+  /* ---------- ONE aisstream connection for the page's lifetime ---------- */
+  useEffect(() => {
+    // warm start: last-heard positions from a previous visit, same 12-min rule
+    try {
+      const c = JSON.parse(localStorage.getItem(CACHE_KEY) ?? "null");
+      if (Array.isArray(c?.vessels)) {
+        const now = Date.now();
+        for (const [mmsi, v] of c.vessels) if (now - v.t < PRUNE_MS) world.current.set(mmsi, v);
+        if (world.current.size) heardSince.current = Math.min(...[...world.current.values()].map((v) => v.t));
+      }
+    } catch {}
+
+    const subs = (only ? STRAITS.filter((s) => s.slug === only) : STRAITS).filter(
+      (s) => s.feed === "aisstream" && s.bbox,
+    );
+    if (!subs.length) return;
+
+    let disposed = false;
+    let retries = 0;
+    let ws: WebSocket | null = null;
+    const connect = () => {
+      if (disposed) return;
+      ws = new WebSocket("wss://stream.aisstream.io/v0/stream");
+      ws.onopen = () => {
+        ws!.send(
+          JSON.stringify({
+            APIKey: KEY,
+            BoundingBoxes: subs.map((s) => s.bbox), // every strait at once
+            FilterMessageTypes: ["PositionReport"],
+          }),
+        );
+        setWsState("live");
+      };
+      ws.onmessage = async (ev) => {
+        try {
+          // aisstream sends binary frames: Blob in browsers
+          const txt = typeof ev.data === "string" ? ev.data : await (ev.data as Blob).text();
+          const m = JSON.parse(txt);
+          const meta = m.MetaData;
+          const pr = m.Message?.PositionReport;
+          if (!meta || !pr) return;
+          retries = 0; // healthy stream
+          world.current.set(meta.MMSI, {
+            lon: meta.longitude,
+            lat: meta.latitude,
+            sog: pr.Sog ?? 0,
+            t: Date.now(),
+          });
+        } catch {}
+      };
+      // the free tier allows one connection per key: dropped sockets are
+      // normal when another tab or the weekly sampler holds the line.
+      // Back off and retry a few times before declaring the feed down.
+      ws.onclose = () => {
+        if (disposed) return;
+        if (retries < 4) {
+          retries += 1;
+          setWsState("connecting");
+          window.setTimeout(connect, 3000 * retries);
+        } else {
+          setWsState("error");
+        }
+      };
+      ws.onerror = () => ws?.close();
+    };
+    connect();
+
+    // persist the picture so the next visit starts warm
+    const save = window.setInterval(() => {
+      try {
+        const arr = [...world.current.entries()].slice(-4000);
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ vessels: arr }));
+      } catch {}
+    }, 10000);
+
+    return () => {
+      disposed = true;
+      clearInterval(save);
+      ws?.close();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* ---------- Digitraffic snapshot, polled while the Baltic is shown ---------- */
+  useEffect(() => {
+    if (strait.feed !== "digitraffic") return;
+    let disposed = false;
+    if (!baltic.current.size) setBalticState("connecting");
+    const load = async () => {
+      try {
+        const r = await fetch("https://meri.digitraffic.fi/api/ais/v1/locations", {
+          headers: { "Digitraffic-User": "LePhare/observatory" },
+        });
+        const d = await r.json();
+        if (disposed) return;
+        baltic.current.clear();
+        for (const f of d.features)
+          baltic.current.set(f.mmsi, {
+            lon: f.geometry.coordinates[0],
+            lat: f.geometry.coordinates[1],
+            sog: f.properties.sog ?? 0,
+            t: Date.now(),
+          });
+        setBalticState("live");
+      } catch {
+        if (!disposed) setBalticState("error");
+      }
+    };
+    load();
+    const timer = window.setInterval(load, 10000);
+    return () => {
+      disposed = true;
+      clearInterval(timer);
+    };
+  }, [strait.feed]);
+
+  /* ---------- render loop: publish the selected strait every 2 s ---------- */
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     map.easeTo({ center: strait.center, zoom: strait.zoom, duration: 900 });
-
-    const vessels = new Map<number, { lon: number; lat: number; sog: number; t: number }>();
-    let disposed = false;
-    let timer = 0;
-    let ws: WebSocket | null = null;
     setStats(null);
 
     const push = () => {
       const now = Date.now();
-      for (const [k, v] of vessels) if (now - v.t > PRUNE_MS) vessels.delete(k);
-      const feats = [...vessels.entries()].map(([mmsi, v]) => ({
-        type: "Feature" as const,
-        properties: { mmsi, sog: v.sog, moving: v.sog > 0.5 ? 1 : 0 },
-        geometry: { type: "Point" as const, coordinates: [v.lon, v.lat] },
-      }));
+      const store = strait.feed === "digitraffic" ? baltic.current : world.current;
+      for (const [k, v] of store) if (now - v.t > PRUNE_MS) store.delete(k);
+      const box = strait.bbox;
+      const feats = [...store.entries()]
+        .filter(
+          ([, v]) => !box || (v.lat >= box[0][0] && v.lat <= box[1][0] && v.lon >= box[0][1] && v.lon <= box[1][1]),
+        )
+        .map(([mmsi, v]) => ({
+          type: "Feature" as const,
+          properties: { mmsi, sog: v.sog, moving: v.sog > 0.5 ? 1 : 0 },
+          geometry: { type: "Point" as const, coordinates: [v.lon, v.lat] },
+        }));
       (map.getSource("ais") as maplibregl.GeoJSONSource | undefined)?.setData({
         type: "FeatureCollection",
         features: feats,
@@ -120,90 +251,12 @@ export default function LiveStraits({ only }: { only?: string }) {
         at: new Date().toLocaleTimeString("en-GB", { timeZone: "UTC" }) + " UTC",
       });
     };
-
-    if (strait.feed === "digitraffic") {
-      setState("connecting");
-      const load = async () => {
-        try {
-          const r = await fetch("https://meri.digitraffic.fi/api/ais/v1/locations", {
-            headers: { "Digitraffic-User": "LePhare/observatory" },
-          });
-          const d = await r.json();
-          if (disposed) return;
-          vessels.clear();
-          for (const f of d.features)
-            vessels.set(f.mmsi, {
-              lon: f.geometry.coordinates[0],
-              lat: f.geometry.coordinates[1],
-              sog: f.properties.sog ?? 0,
-              t: Date.now(),
-            });
-          push();
-          setState("live");
-        } catch {
-          if (!disposed) setState("error");
-        }
-      };
-      load();
-      timer = window.setInterval(load, 10000);
-    } else {
-      setState("connecting");
-      let retries = 0;
-      const connect = () => {
-        if (disposed) return;
-        ws = new WebSocket("wss://stream.aisstream.io/v0/stream");
-        ws.onopen = () => {
-          ws!.send(
-            JSON.stringify({
-              APIKey: KEY,
-              BoundingBoxes: [strait.bbox],
-              FilterMessageTypes: ["PositionReport"],
-            }),
-          );
-          setState("live");
-        };
-        ws.onmessage = async (ev) => {
-          try {
-            // aisstream sends binary frames: Blob in browsers
-            const txt = typeof ev.data === "string" ? ev.data : await (ev.data as Blob).text();
-            const m = JSON.parse(txt);
-            const meta = m.MetaData;
-            const pr = m.Message?.PositionReport;
-            if (!meta || !pr) return;
-            retries = 0; // healthy stream
-            vessels.set(meta.MMSI, {
-              lon: meta.longitude,
-              lat: meta.latitude,
-              sog: pr.Sog ?? 0,
-              t: Date.now(),
-            });
-          } catch {}
-        };
-        // the free tier allows one connection per key: dropped sockets are
-        // normal when another tab or the weekly sampler holds the line.
-        // Back off and retry a few times before declaring the feed down.
-        ws.onclose = () => {
-          if (disposed) return;
-          if (retries < 3) {
-            retries += 1;
-            setState("connecting");
-            window.setTimeout(connect, 3000 * retries);
-          } else {
-            setState("error");
-          }
-        };
-        ws.onerror = () => ws?.close();
-      };
-      connect();
-      timer = window.setInterval(push, 2000);
-    }
-
-    return () => {
-      disposed = true;
-      clearInterval(timer);
-      ws?.close();
-    };
+    push();
+    const timer = window.setInterval(push, 2000);
+    return () => clearInterval(timer);
   }, [strait]);
+
+  const heardMin = Math.max(1, Math.round((Date.now() - heardSince.current) / 60000));
 
   return (
     <div>
@@ -225,11 +278,13 @@ export default function LiveStraits({ only }: { only?: string }) {
         <p className="t-meta" aria-live="polite">
           {state === "error"
             ? "feed unreachable · pick another strait or come back in a minute"
-            : state === "connecting"
-              ? "connecting to live feed…"
-              : stats
-                ? `${stats.total} vessels · ${stats.moving} underway · ${strait.feed === "aisstream" ? "accumulating live broadcasts" : "full snapshot"} · updated ${stats.at}`
-                : "…"}
+            : stats && stats.total > 0
+              ? `${stats.total} vessels · ${stats.moving} underway · ${
+                  strait.feed === "aisstream" ? `heard over the last ${Math.min(heardMin, 12)} min` : "full snapshot"
+                } · updated ${stats.at}`
+              : state === "connecting"
+                ? "connecting to live feed…"
+                : "listening… every strait accumulates in the background from page load"}
         </p>
         <p className="t-meta">
           <span className="mr-3"><span className="mr-1.5 inline-block size-[7px] align-middle" style={{ background: "var(--accent)" }} />underway</span>
@@ -241,10 +296,11 @@ export default function LiveStraits({ only }: { only?: string }) {
         className="h-[500px] w-full border border-line-2 [&_.maplibregl-popup-content]:!bg-transparent [&_.maplibregl-popup-content]:!p-0 [&_.maplibregl-popup-content]:!shadow-none [&_.maplibregl-popup-tip]:!border-t-[color:var(--bg-1)] [&_.maplibregl-ctrl-attrib]:!bg-bg-1 [&_.maplibregl-ctrl-attrib]:!text-ink-3 [&_.maplibregl-ctrl-attrib]:!text-[10px] [&_.maplibregl-popup-close-button]:!text-ink-2"
       />
       <p className="t-meta mt-3">
-        Live AIS: Fintraffic Digitraffic (Baltic, CC BY 4.0) · aisstream.io
-        (world straits, volunteer shore receivers: coverage varies, some
-        straits build slowly or stay sparse — Hormuz notably, where jamming
-        also suppresses AIS) · vessels fade after 12 min of silence
+        Live AIS: Fintraffic Digitraffic (Baltic, CC BY 4.0) · aisstream.io — one
+        stream over all twelve straits, listening from the moment the page
+        opens, last picture cached locally · coverage relies on volunteer shore
+        receivers and can run thin (Hormuz notably, where jamming also
+        suppresses AIS) · vessels fade after 12 min of silence
       </p>
     </div>
   );

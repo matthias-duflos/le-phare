@@ -37,9 +37,10 @@ const rerouting = weekly.rerouting.at(-1);
     <section class="border-b border-line py-14">
       <h2 class="t-serif mb-2 text-3xl">Live watch</h2>
       <p class="mb-8 max-w-[62ch] text-sm text-ink-2">
-        Pick a strait; the map connects to its live AIS feed. The Baltic is a
-        full snapshot (Digitraffic); the world's straits accumulate broadcasts
-        as they arrive (aisstream.io), a busy strait fills within seconds.
+        Pick a strait. The Baltic is a full snapshot (Digitraffic); all other
+        straits share one live stream (aisstream.io) that starts listening the
+        moment the page opens — the picture is already building while you read
+        this, and your last visit's picture is kept warm locally.
       </p>
       <LiveStraits client:load />
     </section>
