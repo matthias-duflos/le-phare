@@ -61,11 +61,23 @@ export default function ZonesAtlas() {
     );
   };
 
+  const [warnPoints, setWarnPoints] = useState<{ ref: string; lat: number; lon: number }[]>([]);
+
   useEffect(() => {
-    fetch("/data/incidents-asam.json")
+    // the full record: ASAM archive + auto-ingested feeds (ReCAAP, IMB) + brief
+    Promise.all([
+      fetch("/data/incidents-asam.json").then((r) => r.json()).catch(() => []),
+      fetch("/data/incidents-live.json").then((r) => r.json()).then((d) => d.events ?? []).catch(() => []),
+    ]).then(([asam, live]) => setIncidents([...asam, ...live, ...curated]));
+    // active official warnings — a "now" layer independent of the timeline
+    fetch("/data/navarea.json")
       .then((r) => r.json())
-      .then((asam) => setIncidents([...asam, ...curated]))
-      .catch(() => setIncidents([...curated]));
+      .then((d) =>
+        setWarnPoints(
+          (d.warnings ?? []).flatMap((w: any) => (w.points ?? []).map(([lat, lon]: [number, number]) => ({ ref: w.ref, lat, lon }))),
+        ),
+      )
+      .catch(() => {});
   }, []);
 
   const activeZones = useMemo(
@@ -151,6 +163,19 @@ export default function ZonesAtlas() {
           "circle-stroke-width": 1,
         },
       });
+      // active official warnings — always "now", whatever month is scrubbed
+      map.addSource("warnings", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      map.addLayer({
+        id: "warning-now",
+        type: "circle",
+        source: "warnings",
+        paint: {
+          "circle-radius": 6.5,
+          "circle-color": "rgba(192,57,43,0.12)",
+          "circle-stroke-color": "#C0392B",
+          "circle-stroke-width": 1.5,
+        },
+      });
     });
     return () => map.remove();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -159,13 +184,22 @@ export default function ZonesAtlas() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
+    const warnGeo = {
+      type: "FeatureCollection" as const,
+      features: warnPoints.map((p) => ({
+        type: "Feature" as const,
+        properties: { ref: p.ref },
+        geometry: { type: "Point" as const, coordinates: [p.lon, p.lat] },
+      })),
+    };
     const apply = () => {
       (map.getSource("zones") as maplibregl.GeoJSONSource | undefined)?.setData(zoneGeo as any);
       (map.getSource("month-incidents") as maplibregl.GeoJSONSource | undefined)?.setData(incGeo as any);
+      (map.getSource("warnings") as maplibregl.GeoJSONSource | undefined)?.setData(warnGeo as any);
     };
     if (map.isStyleLoaded()) apply();
     else map.once("load", apply);
-  }, [zoneGeo, incGeo]);
+  }, [zoneGeo, incGeo, warnPoints]);
 
   return (
     <div>
@@ -200,7 +234,7 @@ export default function ZonesAtlas() {
           <button
             key={MONTHS[i]}
             onClick={() => { setPlaying(false); setIdx(i); }}
-            title={`${label(MONTHS[i])} · ${c} incidents · ${MONTHS[i] <= "2024-06" ? "NGA ASAM archive" : "curated from public reporting"}`}
+            title={`${label(MONTHS[i])} · ${c} incidents · ${MONTHS[i] <= "2024-06" ? "NGA ASAM archive" : "auto-ingested (ReCAAP, IMB) + brief"}`}
             className="min-w-0 flex-1 cursor-pointer transition-opacity duration-150 hover:opacity-100"
             style={{
               height: `${Math.max((c / maxCount) * 100, 4)}%`,
@@ -214,15 +248,19 @@ export default function ZonesAtlas() {
         <span className="mr-1.5 inline-block size-[7px] align-middle" style={{ background: "var(--viz-context)" }} />
         NGA ASAM archive, dense (to Jun 2024, programme defunded)
         <span className="ml-4 mr-1.5 inline-block size-[7px] align-middle" style={{ background: "var(--viz-1)" }} />
-        curated from public reporting, selective — thinner bars reflect coverage, not calm seas
+        auto-ingested from ReCAAP ISC and IMB PRC, plus the brief — refreshed with every data update
       </p>
 
       {/* stats row */}
       <div className="mb-4 flex flex-wrap gap-x-8 gap-y-1">
         <p className="t-meta"><span className="t-num font-mono text-base text-ink">{activeZones.length}</span> active area{activeZones.length === 1 ? "" : "s"}</p>
-        <p className="t-meta"><span className="t-num font-mono text-base text-ink">{incGeo.features.length}</span> incidents that month · {month >= "2024-07" ? "curated, sample" : "ASAM"}</p>
+        <p className="t-meta"><span className="t-num font-mono text-base text-ink">{incGeo.features.length}</span> incidents that month · {month >= "2024-07" ? "ReCAAP + IMB + brief" : "ASAM"}</p>
+        <p className="t-meta">
+          <span className="mr-1.5 inline-block size-[9px] rounded-full border-[1.5px] border-[color:var(--risk)] align-middle" />
+          {warnPoints.length} active official warning position{warnPoints.length === 1 ? "" : "s"} · now
+        </p>
         <p className="t-meta ml-auto">
-          perimeters approximate · ASAM recorded piracy-type acts: state
+          perimeters approximate · piracy-type acts dominate the record: state
           seizures and jamming are under-counted
         </p>
       </div>

@@ -12,7 +12,7 @@ const jsonLd = {
   "@type": "Dataset",
   name: "Le Phare Maritime Incident Database",
   description:
-    "Geocoded and typed maritime security incidents: NGA ASAM archive (2022 to June 2024) plus 2026 incidents curated from public reporting, source linked on every event.",
+    "Geocoded and typed maritime security incidents: NGA ASAM archive (2022 to June 2024), then automated ingestion from the ReCAAP ISC open API and the IMB Piracy Reporting Centre, plus the weekly brief's record. Source on every event.",
   creator: { "@type": "Organization", name: "Le Phare" },
   license: "https://creativecommons.org/licenses/by/4.0/",
 };
@@ -32,16 +32,17 @@ const jsonLd = {
       </h1>
       <p class="mt-6 max-w-[58ch] text-lg leading-relaxed text-ink-2">
         Geocoded and typed hostile acts against ships, with vessel details
-        where publicly reported. Two datasets: the real NGA ASAM archive of
-        677 events (2022 to June 2024, public domain, including vessel names
-        and flags), and incidents from July 2024 onward curated from public
-        reporting — the Red Sea campaign, the Somali piracy resurgence, the
-        Hormuz crisis — source linked on every event.
+        where publicly reported. Three feeds, no hand-picking: the NGA ASAM
+        archive of 677 events (2022 to June 2024, public domain), automated
+        ingestion of every incident published by the ReCAAP ISC open API and
+        the IMB Piracy Reporting Centre from July 2024 onward, and the weekly
+        brief's record for events those feeds miss — the Red Sea campaign,
+        the Hormuz crisis. Source on every event.
       </p>
       <p class="t-meta mt-4">
-        The ASAM programme was defunded on 30 June 2024, which is why the
-        archive stops there · curation carries the record forward and grows
-        weekly with the brief
+        ASAM was defunded on 30 June 2024, which is why the archive stops
+        there · the automated feeds refresh with every data update · live
+        layers on the map: active official warnings and the last-24h news wire
       </p>
     </section>
 

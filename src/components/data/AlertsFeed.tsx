@@ -3,19 +3,14 @@
 // news mentions, not verified incidents; they feed the weekly brief's
 // research, they are not the incident database.
 import { useEffect, useState } from "react";
-
-type Article = { url: string; title: string; domain: string; seendate: string };
-
-const QUERY = encodeURIComponent(
-  '("red sea" OR "bab el-mandeb" OR "strait of hormuz" OR "suez canal" OR "shadow fleet" OR "gps jamming" OR piracy) (shipping OR vessel OR tanker OR maritime) sourcelang:english',
-);
+import { getWireArticles, type WireArticle } from "../../lib/wire";
 
 const fmt = (s: string) =>
   `${s.slice(9, 11)}:${s.slice(11, 13)} UTC · ${s.slice(6, 8)}/${s.slice(4, 6)}`;
 
-const dedupe = (arts: Article[], max: number) => {
+const dedupe = (arts: WireArticle[], max: number) => {
   const seen = new Set<string>();
-  const out: Article[] = [];
+  const out: WireArticle[] = [];
   for (const a of arts) {
     const k = a.title.toLowerCase().slice(0, 55);
     if (seen.has(k)) continue;
@@ -26,24 +21,14 @@ const dedupe = (arts: Article[], max: number) => {
   return out;
 };
 
-export default function AlertsFeed({ max = 10, timespan = "48h" }: { max?: number; timespan?: string }) {
-  const URL_ = `https://api.gdeltproject.org/api/v2/doc/doc?query=${QUERY}&mode=artlist&maxrecords=${Math.min(max * 3, 75)}&timespan=${timespan}&format=json&sort=datedesc`;
-  const [articles, setArticles] = useState<Article[] | null>(null);
+export default function AlertsFeed({ max = 10, timespan = "7d" }: { max?: number; timespan?: string }) {
+  const [articles, setArticles] = useState<WireArticle[] | null>(null);
   const [snapshot, setSnapshot] = useState<string | null>(null);
 
   useEffect(() => {
     let gone = false;
-    // 15-minute session cache protects GDELT's 1-request/5s rate limit
-    const CACHE = "phare-wire";
-    try {
-      const c = JSON.parse(sessionStorage.getItem(CACHE) ?? "null");
-      if (c && Date.now() - c.at < 15 * 60000) {
-        setArticles(dedupe(c.articles, max));
-        return;
-      }
-    } catch {}
-    // snapshot first: the weekly wire.json paints instantly, then the live
-    // GDELT fetch (often several seconds) replaces it when it lands.
+    // snapshot first: the weekly wire.json paints instantly, then the shared
+    // live fetch (one GDELT call for the feed AND the map pins) replaces it.
     fetch("/data/wire.json")
       .then((r) => r.json())
       .then((d) => {
@@ -52,16 +37,11 @@ export default function AlertsFeed({ max = 10, timespan = "48h" }: { max?: numbe
         setSnapshot((cur) => cur ?? (d.fetched?.slice(0, 10) ?? ""));
       })
       .catch(() => {});
-    fetch(URL_)
-      .then((r) => r.json())
-      .then((d) => {
-        if (!d.articles) throw new Error("rate limited");
-        sessionStorage.setItem(CACHE, JSON.stringify({ at: Date.now(), articles: d.articles }));
-        if (gone) return;
-        setArticles(dedupe(d.articles, max));
-        setSnapshot(null);
-      })
-      .catch(() => !gone && setArticles((cur) => cur ?? []));
+    getWireArticles().then(({ articles: arts, snapshot: snap }) => {
+      if (gone) return;
+      setArticles(dedupe(arts, max));
+      setSnapshot(snap);
+    });
     return () => {
       gone = true;
     };

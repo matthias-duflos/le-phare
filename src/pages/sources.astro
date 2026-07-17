@@ -6,9 +6,11 @@ import SiteFooter from "../components/SiteFooter.astro";
 const sources = [
   { name: "NGA ASAM archive", url: "https://msi.nga.mil/Piracy", licence: "US Government work, public domain", use: "Historical incident records 2022-2024, including descriptions and vessel details. Programme defunded 30 June 2024." },
   { name: "Fintraffic / Digitraffic marine AIS", url: "https://www.digitraffic.fi/en/marine-traffic/", licence: "CC BY 4.0", use: "Live AIS positions over Finnish and nearby Baltic waters, polled every ten seconds." },
-  { name: "UKMTO", url: "https://www.ukmto.org", licence: "Linked, never copied", use: "Advisories and warnings referenced in curated incidents and the weekly brief." },
+  { name: "ReCAAP ISC open map API", url: "https://portal.recaap.org/OpenMap", licence: "Extracts reproduced non-commercially with acknowledgement, per ReCAAP ISC terms", use: "Automated ingestion of piracy and armed-robbery incidents across Asia (position, type, ship, narrative), refreshed with every data update." },
+  { name: "IMB Piracy Reporting Centre live map", url: "https://icc-ccs.org/index.php/piracy-reporting-centre/live-piracy-map", licence: "Attributed, source-linked on every event", use: "Automated ingestion of worldwide piracy and armed-robbery sitreps from July 2024 onward." },
+  { name: "NGA MSI broadcast warnings", url: "https://msi.nga.mil", licence: "US Government work, public domain", use: "Active NAVAREA / HYDRO warnings with a security dimension; quoted positions parsed onto the live map layers." },
+  { name: "UKMTO", url: "https://www.ukmto.org", licence: "Linked, never copied", use: "Advisories and warnings referenced in the weekly brief." },
   { name: "MICA Center", url: "https://www.mica-center.org", licence: "Linked, never copied", use: "Gulf of Guinea and worldwide maritime security reporting, referenced." },
-  { name: "IMB Piracy Reporting Centre", url: "https://www.icc-ccs.org", licence: "Linked, never copied", use: "Piracy and armed robbery reporting, referenced." },
   { name: "Joint War Committee circulars", url: "https://lmalloyds.com", licence: "Reconstructed perimeters only", use: "Listed-area geometry in the zones atlas is an approximate visualisation; the circulars remain authoritative." },
   { name: "NASA GIBS · VIIRS Black Marble", url: "https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api", licence: "NASA open data, credited", use: "Night-lights Earth imagery on the home globe." },
   { name: "OpenFreeMap / OpenMapTiles / OpenStreetMap", url: "https://openfreemap.org", licence: "ODbL (OSM), attribution on every map", use: "Vector basemap tiles restyled as the observatory's Abyss map style." },

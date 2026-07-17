@@ -98,20 +98,6 @@
   }
  },
  {
-  "id": "CUR-2026-016",
-  "date": "2026-01-10",
-  "type": "boarding",
-  "zone": "Gulf of Guinea",
-  "lat": 0.4,
-  "lon": 9.2,
-  "vessel": "Fishing trawler IB FISH 7 (Gabon flag)",
-  "summary": "Three armed men boarded the trawler at night about seven nautical miles off the Gabonese coast and abducted nine crew members, five Chinese and four Indonesian; the vessel was escorted to Owendo. The Gulf of Guinea remains the world's kidnap-for-ransom hotspot. Position approximate.",
-  "source": {
-   "name": "The Maritime Executive",
-   "url": "https://maritime-executive.com/article/pirates-kidnap-chinese-crewmembers-from-fishing-vessel-off-gabon"
-  }
- },
- {
   "id": "CUR-2026-017",
   "date": "2026-01-26",
   "type": "gps-jamming",
@@ -123,48 +109,6 @@
   "source": {
    "name": "Pole Star Global",
    "url": "https://www.polestarglobal.com/resources/14-states-russian-maritime-gps-interference/"
-  }
- },
- {
-  "id": "CUR-2026-018",
-  "date": "2026-03-18",
-  "type": "boarding",
-  "zone": "Singapore Strait",
-  "lat": 1.067,
-  "lon": 103.6,
-  "vessel": "Bulk carrier DARYA TIANA",
-  "summary": "Boarded at 0130 hrs while transiting the Phillip Channel, eastbound lane of the Singapore Strait TSS — first of three back-to-back sea robberies in these waters within 48 hours (ReCAAP Incident Alert 1/2026). Position 1°4'N 103°36'E.",
-  "source": {
-   "name": "ReCAAP ISC",
-   "url": "https://www.recaap.org/resources/ck/files/alerts/2026/ReCAAP%20ISC%20IA%2001-2026%20Sea%20Robbery%20Incidents%20in%20Straits%20of%20Malacca%20&%20Singapore%20(19%20March%202026).pdf"
-  }
- },
- {
-  "id": "CUR-2026-019",
-  "date": "2026-03-19",
-  "type": "boarding",
-  "zone": "Singapore Strait",
-  "lat": 1.06,
-  "lon": 103.628,
-  "vessel": "Bulk carrier HELLASSHIP",
-  "summary": "Boarded at 0155 hrs in the Phillip Channel, less than two nautical miles from the previous night's boarding. Across the three linked incidents one crew member was injured and one ship lost engine spare parts. Position 1°3.61'N 103°37.66'E.",
-  "source": {
-   "name": "ReCAAP ISC",
-   "url": "https://www.recaap.org/resources/ck/files/alerts/2026/ReCAAP%20ISC%20IA%2001-2026%20Sea%20Robbery%20Incidents%20in%20Straits%20of%20Malacca%20&%20Singapore%20(19%20March%202026).pdf"
-  }
- },
- {
-  "id": "CUR-2026-020",
-  "date": "2026-03-19",
-  "type": "boarding",
-  "zone": "Singapore Strait",
-  "lat": 1.048,
-  "lon": 103.628,
-  "vessel": "Bulk carrier ARISTOTELES GRAECIA",
-  "summary": "Boarded at 0345 hrs, the third bulk carrier robbed in the Phillip Channel in 48 hours; ReCAAP counted ten incidents in the Straits of Malacca and Singapore since January and warned of more. Position 1°2.9'N 103°37.7'E.",
-  "source": {
-   "name": "ReCAAP ISC",
-   "url": "https://www.recaap.org/resources/ck/files/alerts/2026/ReCAAP%20ISC%20IA%2001-2026%20Sea%20Robbery%20Incidents%20in%20Straits%20of%20Malacca%20&%20Singapore%20(19%20March%202026).pdf"
   }
  },
  {

@@ -6,6 +6,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import * as Plot from "@observablehq/plot";
 import { readTheme, plotDefaults, onThemeChange, exportPlotPNG } from "../../lib/viz";
+import { getWireArticles, wirePin, wireTime, type WirePin } from "../../lib/wire";
 import incidentsRaw from "../../data/incidents.json";
 
 type Incident = {
@@ -19,7 +20,10 @@ type Incident = {
   vessel?: string | null;
   hostility?: string | null;
   source: { name: string; url: string };
+  origin?: string; // "recaap" | "imb" — auto-ingested feeds
 };
+
+type Warning = { ref: string; text: string; issued?: string | null; points: [number, number][] };
 
 const CURATED = incidentsRaw as Incident[];
 
@@ -35,9 +39,9 @@ const TYPE_ORDER = Object.keys(TYPE_LABELS);
 const typeVar = (t: string) => `var(--viz-${TYPE_ORDER.indexOf(t) + 1})`;
 
 const YEARS = [
-  { id: "2026", label: "2026", note: "curated · public reporting" },
-  { id: "2025", label: "2025", note: "curated · public reporting" },
-  { id: "2024", label: "2024", note: "ASAM to June · curated after" },
+  { id: "2026", label: "2026", note: "auto-ingested (ReCAAP, IMB) + brief" },
+  { id: "2025", label: "2025", note: "auto-ingested (ReCAAP, IMB) + brief" },
+  { id: "2024", label: "2024", note: "ASAM to June · auto-ingested after" },
   { id: "2023", label: "2023", note: "NGA ASAM" },
   { id: "2022", label: "2022", note: "NGA ASAM" },
   { id: "all", label: "All", note: "2022 → 2026" },
@@ -48,20 +52,56 @@ const fmt = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", y
 export default function IncidentExplorer() {
   const [year, setYear] = useState("2026");
   const [asam, setAsam] = useState<Incident[] | null>(null);
+  const [live, setLive] = useState<Incident[] | null>(null);
+  const [warnings, setWarnings] = useState<Warning[]>([]);
+  const [showWarn, setShowWarn] = useState(true);
+  const [wire, setWire] = useState<WirePin[]>([]);
+  const [showWire, setShowWire] = useState(true);
   const [types, setTypes] = useState<Set<string>>(new Set(TYPE_ORDER));
   const [zone, setZone] = useState("");
   const [sort, setSort] = useState<{ key: "date" | "type" | "zone"; dir: 1 | -1 }>({ key: "date", dir: -1 });
 
-  // the real archive is heavy (677 events), fetched once outside the bundle
+  // heavier datasets fetched once outside the bundle:
+  // the ASAM archive (677 events), the auto-ingested feed (ReCAAP + IMB,
+  // refreshed by cron) and the active official NAVAREA warnings
   useEffect(() => {
     fetch("/data/incidents-asam.json")
       .then((r) => r.json())
       .then(setAsam)
       .catch(() => setAsam([]));
+    fetch("/data/incidents-live.json")
+      .then((r) => r.json())
+      .then((d) => setLive(d.events ?? []))
+      .catch(() => setLive([]));
+    fetch("/data/navarea.json")
+      .then((r) => r.json())
+      .then((d) => setWarnings((d.warnings ?? []).filter((w: Warning) => w.points?.length)))
+      .catch(() => {});
+    // wire pins: news mentions of the last 24 h, geocoded by place keyword,
+    // refreshed every 15 min while the page stays open
+    let timer = 0;
+    const loadWire = () =>
+      getWireArticles().then(({ articles }) => {
+        const dayAgo = Date.now() - 24 * 3600000;
+        const seen = new Set<string>();
+        const pins: WirePin[] = [];
+        for (const a of articles) {
+          if (wireTime(a.seendate) < dayAgo) continue;
+          const k = a.title.toLowerCase().slice(0, 55);
+          if (seen.has(k)) continue;
+          seen.add(k);
+          const p = wirePin(a);
+          if (p) pins.push(p);
+        }
+        setWire(pins);
+      });
+    loadWire();
+    timer = window.setInterval(loadWire, 15 * 60000);
+    return () => clearInterval(timer);
   }, []);
 
-  const data = useMemo(() => [...CURATED, ...(asam ?? [])], [asam]);
-  const loading = asam === null && year !== "2026";
+  const data = useMemo(() => [...CURATED, ...(live ?? []), ...(asam ?? [])], [asam, live]);
+  const loading = (asam === null && year !== "2026") || live === null;
   const zones = useMemo(
     () => [...new Set(data.filter((i) => year === "all" || i.date.startsWith(year)).map((i) => i.zone))].sort(),
     [data, year],
@@ -167,6 +207,68 @@ export default function IncidentExplorer() {
         },
       });
 
+      // active official warnings: hollow red diamonds, always "now"
+      map.addSource("warnings", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      map.addLayer({
+        id: "warning-points",
+        type: "circle",
+        source: "warnings",
+        paint: {
+          "circle-radius": 7,
+          "circle-color": "rgba(192,57,43,0.15)",
+          "circle-stroke-color": "#C0392B",
+          "circle-stroke-width": 1.6,
+        },
+      });
+      map.on("click", "warning-points", (e) => {
+        const p = e.features![0].properties as any;
+        popupRef.current?.remove();
+        popupRef.current = new maplibregl.Popup({ closeButton: true, maxWidth: "320px" })
+          .setLngLat((e.features![0].geometry as any).coordinates)
+          .setHTML(
+            `<div style="font-family:var(--font-sans);color:var(--ink);background:var(--bg-1);padding:14px 16px;border:1px solid var(--line-2);max-height:280px;overflow-y:auto">
+              <p style="font-family:var(--font-mono);font-size:11px;color:var(--risk-text)">${p.ref} · ACTIVE OFFICIAL WARNING</p>
+              <p style="font-size:12.5px;line-height:1.55;margin-top:8px">${String(p.text).slice(0, 420)}${String(p.text).length > 420 ? "…" : ""}</p>
+              <p style="font-size:11px;margin-top:10px;color:var(--ink-3)">NGA MSI broadcast warning · live feed, public domain</p>
+            </div>`,
+          )
+          .addTo(map);
+      });
+      map.on("mouseenter", "warning-points", () => (map.getCanvas().style.cursor = "pointer"));
+      map.on("mouseleave", "warning-points", () => (map.getCanvas().style.cursor = ""));
+
+      // wire pins: last-24h news mentions, color by severity, pulsing in
+      map.addSource("wire", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      map.addLayer({
+        id: "wire-pins",
+        type: "circle",
+        source: "wire",
+        paint: {
+          "circle-radius": ["match", ["get", "severity"], "severe", 5.5, "incident", 4.5, 3.5],
+          "circle-color": ["match", ["get", "severity"], "severe", "#C0392B", "incident", "#F2B950", "#5E7C93"],
+          "circle-opacity": 0.9,
+          "circle-stroke-color": "rgba(232,237,242,0.5)",
+          "circle-stroke-width": 1,
+        },
+      });
+      map.on("click", "wire-pins", (e) => {
+        const p = e.features![0].properties as any;
+        popupRef.current?.remove();
+        popupRef.current = new maplibregl.Popup({ closeButton: true, maxWidth: "320px" })
+          .setLngLat((e.features![0].geometry as any).coordinates)
+          .setHTML(
+            `<div style="font-family:var(--font-sans);color:var(--ink);background:var(--bg-1);padding:14px 16px;border:1px solid var(--line-2)">
+              <p style="font-family:var(--font-mono);font-size:11px;color:var(--ink-3)">${p.when} · ${p.domain} · wire</p>
+              <p style="font-size:13.5px;line-height:1.5;margin-top:7px">${p.title}</p>
+              <p style="font-size:11px;margin-top:9px"><a href="${p.url}" target="_blank" rel="noopener" style="color:var(--accent-text)">Read the article ↗</a></p>
+              <p style="font-size:11px;margin-top:7px;color:var(--ink-3)">news mention, unverified · position approximate (keyword geocode) · fades after 24 h</p>
+            </div>`,
+          )
+          .addTo(map);
+      });
+      map.on("mouseenter", "wire-pins", () => (map.getCanvas().style.cursor = "pointer"));
+      map.on("mouseleave", "wire-pins", () => (map.getCanvas().style.cursor = ""));
+
       map.on("click", "clusters", async (e) => {
         const f = map.queryRenderedFeatures(e.point, { layers: ["clusters"] })[0];
         const src = map.getSource("incidents") as maplibregl.GeoJSONSource;
@@ -199,6 +301,47 @@ export default function IncidentExplorer() {
     if (map.isStyleLoaded()) apply();
     else map.once("load", apply);
   }, [geojson]);
+
+  // warnings layer follows its toggle
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const geo = {
+      type: "FeatureCollection" as const,
+      features: showWarn
+        ? warnings.flatMap((w) =>
+            w.points.map(([lat, lon]) => ({
+              type: "Feature" as const,
+              properties: { ref: w.ref, text: w.text },
+              geometry: { type: "Point" as const, coordinates: [lon, lat] },
+            })),
+          )
+        : [],
+    };
+    const apply = () => (map.getSource("warnings") as maplibregl.GeoJSONSource | undefined)?.setData(geo as any);
+    if (map.isStyleLoaded()) apply();
+    else map.once("load", apply);
+  }, [warnings, showWarn]);
+
+  // wire pins follow their toggle and the 15-min refresh
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const fmtWhen = (s: string) => `${s.slice(9, 11)}:${s.slice(11, 13)} UTC`;
+    const geo = {
+      type: "FeatureCollection" as const,
+      features: showWire
+        ? wire.map((p) => ({
+            type: "Feature" as const,
+            properties: { title: p.title, url: p.url, domain: p.domain, severity: p.severity, when: fmtWhen(p.seendate) },
+            geometry: { type: "Point" as const, coordinates: [p.lon, p.lat] },
+          }))
+        : [],
+    };
+    const apply = () => (map.getSource("wire") as maplibregl.GeoJSONSource | undefined)?.setData(geo as any);
+    if (map.isStyleLoaded()) apply();
+    else map.once("load", apply);
+  }, [wire, showWire]);
 
   const showPopup = (p: Incident, coords: [number, number]) => {
     popupRef.current?.remove();
@@ -378,11 +521,33 @@ export default function IncidentExplorer() {
             <option key={z} value={z}>{z}</option>
           ))}
         </select>
+        <button
+          onClick={() => setShowWarn((s) => !s)}
+          aria-pressed={showWarn}
+          title="Active NAVAREA / HYDRO warnings with a security dimension, live from NGA MSI"
+          className={`t-caps inline-flex cursor-pointer items-center gap-1.5 border rounded-r1 px-2.5 py-1.5 transition-all duration-150 ${
+            showWarn ? "border-[color:var(--risk)] !text-risk-text" : "border-line !text-ink-3 opacity-45"
+          }`}
+        >
+          <span className="inline-block size-[7px] rounded-full border border-[color:var(--risk)]" />
+          warnings now
+        </button>
+        <button
+          onClick={() => setShowWire((s) => !s)}
+          aria-pressed={showWire}
+          title="News mentions of the last 24 h, geocoded by place keyword — unverified, approximate"
+          className={`t-caps inline-flex cursor-pointer items-center gap-1.5 border rounded-r1 px-2.5 py-1.5 transition-all duration-150 ${
+            showWire ? "border-line-2 !text-ink-2" : "border-line !text-ink-3 opacity-45"
+          }`}
+        >
+          <span className="inline-block size-[7px] rounded-full" style={{ background: "#5E7C93" }} />
+          wire 24h{wire.length ? ` · ${wire.length}` : ""}
+        </button>
         <p className="t-meta ml-auto" aria-live="polite">
           {loading
-            ? "loading archive…"
+            ? "loading feeds…"
             : `${filtered.length} incident${filtered.length === 1 ? "" : "s"} · ${
-                year === "2026" ? "curated from public reporting" : year === "all" ? "ASAM + curated" : "NGA ASAM, public domain"
+                year >= "2025" ? "auto-ingested: ReCAAP + IMB PRC · plus the brief's record" : year === "all" ? "ASAM + auto-ingested + brief" : year === "2024" ? "ASAM to June · auto-ingested after" : "NGA ASAM, public domain"
               }`}
         </p>
       </div>
@@ -393,6 +558,14 @@ export default function IncidentExplorer() {
         ref={mapDiv}
         className="h-[480px] w-full border border-line-2 [&_.maplibregl-popup-content]:!bg-transparent [&_.maplibregl-popup-content]:!p-0 [&_.maplibregl-popup-content]:!shadow-none [&_.maplibregl-popup-tip]:!border-t-[color:var(--bg-1)] [&_.maplibregl-ctrl-attrib]:!bg-bg-1 [&_.maplibregl-ctrl-attrib]:!text-ink-3 [&_.maplibregl-ctrl-attrib]:!text-[10px] [&_.maplibregl-popup-close-button]:!text-ink-2 [&_.maplibregl-popup-close-button]:!text-lg [&_.maplibregl-popup-close-button]:!px-2"
       />
+      <p className="t-meta -mt-6">
+        live layers: <span className="mr-1 inline-block size-[8px] rounded-full border-[1.5px] border-[color:var(--risk)] align-middle" /> active official
+        warnings (NGA MSI) · wire pins, last 24 h news mentions, refreshed every 15 min —{" "}
+        <span className="mx-1 inline-block size-[7px] rounded-full align-middle" style={{ background: "#C0392B" }} /> attack / casualties{" "}
+        <span className="mx-1 inline-block size-[7px] rounded-full align-middle" style={{ background: "#F2B950" }} /> boarding / seizure{" "}
+        <span className="mx-1 inline-block size-[7px] rounded-full align-middle" style={{ background: "#5E7C93" }} /> weak signal · positions approximate,
+        unverified — verified events join the record via the auto feeds
+      </p>
 
       {/* charts row, left to right */}
       <div className="grid gap-10 md:grid-cols-2 xl:grid-cols-3">
@@ -402,7 +575,7 @@ export default function IncidentExplorer() {
               ref: chartRef,
               slug: "monthly-trend",
               title: "Monthly trend",
-              sub: `Incidents per month by type · ${year === "2026" ? "curated 2026" : year === "all" ? "ASAM archive + curated" : `NGA ASAM archive, ${year}`}`,
+              sub: `Incidents per month by type · ${year >= "2025" ? `auto-ingested + brief, ${year}` : year === "all" ? "ASAM + auto-ingested + brief" : year === "2024" ? "ASAM to June, auto after" : `NGA ASAM archive, ${year}`}`,
             },
             { ref: zoneRef, slug: "by-zone", title: "Where", sub: "Incidents by zone, top 8, current filters" },
             { ref: typeRef, slug: "by-type", title: "What", sub: "Incidents by type, current filters" },

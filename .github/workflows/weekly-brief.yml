@@ -20,6 +20,7 @@ jobs:
       - run: node scripts/fetch-portwatch.mjs
       - run: node scripts/fetch-navarea.mjs
       - run: node scripts/fetch-wire.mjs
+      - run: node scripts/fetch-incidents-live.mjs
       # AIS integrity sampling session (skips cleanly if the secret is absent)
       - run: npm install --no-save --no-audit --no-fund topojson-client d3-geo
       - run: node scripts/fetch-anomalies.mjs
