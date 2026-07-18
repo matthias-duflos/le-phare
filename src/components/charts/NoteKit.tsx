@@ -50,19 +50,20 @@ export function KeyFigs({ items }: { items: { v: string; l: string }[] }) {
   );
 }
 
-/** One line of the signals ledger. */
+/** One line of the signals ledger. Children arrive as an MDX-generated
+    paragraph, so the body wrapper must be a div (p-in-p breaks the grid). */
 export function Signal({ flag, title, children }: { flag?: "risk" | "watch"; title: string; children: ReactNode }) {
   return (
     <div className="grid gap-2 border-t border-line-2 py-4 md:grid-cols-12">
-      <p className="md:col-span-3">
+      <div className="md:col-span-3">
         {flag && (
           <span className={`t-caps ${flag === "risk" ? "!text-risk-text" : "!text-accent-text"}`}>
             <span className="mr-1.5 inline-block size-[7px] align-middle" style={{ background: flag === "risk" ? "var(--risk)" : "var(--accent)" }} />
           </span>
         )}
         <span className="text-sm font-medium text-ink">{title}</span>
-      </p>
-      <p className="max-w-[70ch] text-sm leading-relaxed text-ink-2 md:col-span-9">{children}</p>
+      </div>
+      <div className="max-w-[70ch] text-sm leading-relaxed text-ink-2 md:col-span-9 [&_p]:m-0">{children}</div>
     </div>
   );
 }
