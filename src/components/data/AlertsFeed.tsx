@@ -1,7 +1,8 @@
-// Live wire: recent worldwide news mentions relevant to maritime risk,
-// via the GDELT DOC API (free, ~15 min refresh upstream). These are raw
-// news mentions, not verified incidents; they feed the weekly brief's
-// research, they are not the incident database.
+// The wire: recent worldwide news mentions relevant to maritime risk, from
+// the GDELT snapshot the cron refreshes every 6 hours (GDELT's API is not
+// callable from a browser — no CORS). These are raw news mentions, not
+// verified incidents; they feed the weekly brief's research, they are not
+// the incident database.
 import { useEffect, useState } from "react";
 import { getWireArticles, type WireArticle } from "../../lib/wire";
 
@@ -27,16 +28,7 @@ export default function AlertsFeed({ max = 10, timespan = "7d" }: { max?: number
 
   useEffect(() => {
     let gone = false;
-    // snapshot first: the weekly wire.json paints instantly, then the shared
-    // live fetch (one GDELT call for the feed AND the map pins) replaces it.
-    fetch("/data/wire.json")
-      .then((r) => r.json())
-      .then((d) => {
-        if (gone) return;
-        setArticles((cur) => cur ?? dedupe(d.articles, max));
-        setSnapshot((cur) => cur ?? (d.fetched?.slice(0, 10) ?? ""));
-      })
-      .catch(() => {});
+    // one shared snapshot read for the feed AND the map pins
     getWireArticles().then(({ articles: arts, snapshot: snap }) => {
       if (gone) return;
       setArticles(dedupe(arts, max));
@@ -50,7 +42,7 @@ export default function AlertsFeed({ max = 10, timespan = "7d" }: { max?: number
 
   if (!articles) return <p className="t-meta">reading the wire…</p>;
   if (articles.length === 0)
-    return <p className="t-meta">wire temporarily unreachable · the weekly snapshot returns shortly</p>;
+    return <p className="t-meta">wire temporarily unreachable · the snapshot returns on the next refresh</p>;
 
   return (
     <div>
@@ -68,7 +60,7 @@ export default function AlertsFeed({ max = 10, timespan = "7d" }: { max?: number
       </ol>
       <p className="t-meta mt-4">
         GDELT news mentions, last {timespan.replace("h", " h").replace("d", " days")}
-        {snapshot ? ` · snapshot ${snapshot} (live feed rate-limited)` : " · live"} ·
+        {snapshot ? ` · snapshot ${snapshot}, refreshed every 6 h` : ""} ·
         unverified, for research context only · not the incident database
       </p>
     </div>

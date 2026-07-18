@@ -1,22 +1,21 @@
-// The live alerts wire, shared by the feed list and the map pins.
-// GDELT DOC articles carry no coordinates: pins are geocoded by matching
+// The alerts wire, shared by the feed list and the map pins.
+// Articles come from the wire snapshot (public/data/wire.json), written by
+// scripts/fetch-wire.mjs on the 6-hour refresh cron. GDELT's DOC API sends
+// no CORS headers, so the browser cannot query it directly — the snapshot
+// IS the freshest picture a static page can honestly serve.
+// GDELT articles carry no coordinates: pins are geocoded by matching
 // maritime place keywords in the title — approximate by design, and said so.
 
 export type WireArticle = { url: string; title: string; domain: string; seendate: string };
 
-export const WIRE_QUERY = encodeURIComponent(
-  '("red sea" OR "bab el-mandeb" OR "strait of hormuz" OR "suez canal" OR "shadow fleet" OR "gps jamming" OR piracy) (shipping OR vessel OR tanker OR maritime) sourcelang:english',
-);
-
-const CACHE = "phare-wire"; // shared cache: one GDELT call per session
 let inflight: Promise<{ articles: WireArticle[]; snapshot: string | null }> | null = null;
 
-/** 7-day article list: session cache → live GDELT → weekly snapshot.
-    Concurrent callers (feed list + map pins) share a single request. */
+/** 7-day article list from the latest wire snapshot (cron-refreshed every 6 h).
+    Concurrent callers (feed list + map pins) share a single request; a page
+    left open re-reads the snapshot after 15 min to pick up cron refreshes. */
 export function getWireArticles() {
   if (!inflight) {
     inflight = fetchWireArticles().finally(() => {
-      // keep the resolved promise for 15 min, matching the session cache
       setTimeout(() => (inflight = null), 15 * 60000);
     });
   }
@@ -25,25 +24,11 @@ export function getWireArticles() {
 
 async function fetchWireArticles(): Promise<{ articles: WireArticle[]; snapshot: string | null }> {
   try {
-    const c = JSON.parse(sessionStorage.getItem(CACHE) ?? "null");
-    if (c && Date.now() - c.at < 15 * 60000) return { articles: c.articles, snapshot: null };
-  } catch {}
-  try {
-    const r = await fetch(
-      `https://api.gdeltproject.org/api/v2/doc/doc?query=${WIRE_QUERY}&mode=artlist&maxrecords=75&timespan=7d&format=json&sort=datedesc`,
-    );
+    const r = await fetch("/data/wire.json", { cache: "no-cache" });
     const d = await r.json();
-    if (!d.articles) throw new Error("rate limited");
-    sessionStorage.setItem(CACHE, JSON.stringify({ at: Date.now(), articles: d.articles }));
-    return { articles: d.articles, snapshot: null };
+    return { articles: d.articles ?? [], snapshot: d.fetched?.slice(0, 10) ?? "" };
   } catch {
-    try {
-      const r = await fetch("/data/wire.json");
-      const d = await r.json();
-      return { articles: d.articles ?? [], snapshot: d.fetched?.slice(0, 10) ?? "" };
-    } catch {
-      return { articles: [], snapshot: null };
-    }
+    return { articles: [], snapshot: null };
   }
 }
 

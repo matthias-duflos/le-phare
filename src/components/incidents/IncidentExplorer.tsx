@@ -78,7 +78,8 @@ export default function IncidentExplorer() {
       .then((d) => setWarnings((d.warnings ?? []).filter((w: Warning) => w.points?.length)))
       .catch(() => {});
     // wire pins: news mentions of the last 24 h, geocoded by place keyword,
-    // refreshed every 15 min while the page stays open
+    // from the 6-h wire snapshot — re-read every 15 min while the page stays
+    // open so a long-lived tab picks up the cron's refreshes
     let timer = 0;
     const loadWire = () =>
       getWireArticles().then(({ articles }) => {
@@ -560,7 +561,7 @@ export default function IncidentExplorer() {
       />
       <p className="t-meta -mt-6">
         live layers: <span className="mr-1 inline-block size-[8px] rounded-full border-[1.5px] border-[color:var(--risk)] align-middle" /> active official
-        warnings (NGA MSI) · wire pins, last 24 h news mentions, refreshed every 15 min —{" "}
+        warnings (NGA MSI) · wire pins, last 24 h news mentions, refreshed every 6 h —{" "}
         <span className="mx-1 inline-block size-[7px] rounded-full align-middle" style={{ background: "#C0392B" }} /> attack / casualties{" "}
         <span className="mx-1 inline-block size-[7px] rounded-full align-middle" style={{ background: "#F2B950" }} /> boarding / seizure{" "}
         <span className="mx-1 inline-block size-[7px] rounded-full align-middle" style={{ background: "#5E7C93" }} /> weak signal · positions approximate,
