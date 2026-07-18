@@ -13,4 +13,4 @@ The rule everywhere: **we link, we never copy.** Full details on /sources.
 | Natural Earth | Public domain | Land dot-grid assets |
 
 Software: Astro, MapLibre GL JS, three.js, Observable Plot, D3, GSAP, Lenis,
-Newsreader, Inter, JetBrains Mono.
+Spectral, Fraunces, Archivo, IBM Plex Mono.
