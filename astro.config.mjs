@@ -6,11 +6,14 @@ import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 
+import cloudflare from '@astrojs/cloudflare';
+
 // https://astro.build/config
 export default defineConfig({
   // Cloudflare Pages project "le-phare"; override with SITE=https://… at build
   // time once a custom domain is attached.
   site: process.env.SITE ?? 'https://le-phare.pages.dev',
+
   devToolbar: { enabled: false },
   integrations: [react(), mdx(), sitemap()],
 
@@ -20,5 +23,7 @@ export default defineConfig({
     optimizeDeps: {
       include: ['three', 'maplibre-gl', 'gsap', 'gsap/ScrollTrigger', 'gsap/SplitText', 'lenis', '@observablehq/plot', 'react', 'react-dom']
     }
-  }
+  },
+
+  adapter: cloudflare()
 });
