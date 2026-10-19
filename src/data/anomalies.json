@@ -868,7 +868,86 @@
      }
     }
    }
+  },
+  {
+   "week": "2026-W43",
+   "date": "2026-10-19",
+   "minutes": 12,
+   "zones": {
+    "hormuz": {
+     "name": "Strait of Hormuz",
+     "messages": 20,
+     "vessels": 11,
+     "counts": {
+      "jamming-cluster": 0,
+      "impossible-jump": 0,
+      "speed-anomaly": 0,
+      "dark-gap": 1,
+      "position-on-land": 0
+     }
+    },
+    "black-sea": {
+     "name": "Black Sea",
+     "messages": 134,
+     "vessels": 61,
+     "counts": {
+      "jamming-cluster": 1,
+      "impossible-jump": 0,
+      "speed-anomaly": 0,
+      "dark-gap": 0,
+      "position-on-land": 9
+     }
+    },
+    "gulf-of-finland": {
+     "name": "Gulf of Finland",
+     "messages": 353,
+     "vessels": 137,
+     "counts": {
+      "jamming-cluster": 1,
+      "impossible-jump": 0,
+      "speed-anomaly": 0,
+      "dark-gap": 1,
+      "position-on-land": 7
+     }
+    },
+    "east-med": {
+     "name": "Eastern Mediterranean",
+     "messages": 323,
+     "vessels": 128,
+     "counts": {
+      "jamming-cluster": 0,
+      "impossible-jump": 0,
+      "speed-anomaly": 2,
+      "dark-gap": 2,
+      "position-on-land": 3
+     }
+    },
+    "southern-red-sea": {
+     "name": "Southern Red Sea",
+     "messages": 0,
+     "vessels": 0,
+     "counts": {
+      "jamming-cluster": 0,
+      "impossible-jump": 0,
+      "speed-anomaly": 0,
+      "dark-gap": 0,
+      "position-on-land": 0
+     }
+    },
+    "gulf-of-guinea": {
+     "name": "Gulf of Guinea",
+     "messages": 124,
+     "vessels": 51,
+     "counts": {
+      "jamming-cluster": 2,
+      "impossible-jump": 0,
+      "speed-anomaly": 0,
+      "dark-gap": 0,
+      "position-on-land": 13
+     }
+    }
+   }
   }
  ],
- "updated": "2026-10-12T15:30:38.204Z"
+ "updated": "2026-10-19T13:25:52.038Z"
 }
